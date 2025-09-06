@@ -190,69 +190,120 @@
       input.value = v;
     });
 
-    // ===== Homestead boundary (GeoJSON) =====
-    const homesteadBoundary = {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [-80.4120765, 25.4814287], [-80.4121837, 25.4850587], [-80.4122839, 25.4923133], [-80.4123524, 25.4996034],
-          [-80.4142083, 25.4995867], [-80.414213, 25.5144809], [-80.4216834, 25.5144577], [-80.4217181, 25.4995736],
-          [-80.429074, 25.4995493], [-80.4291071, 25.4812239], [-80.4327771, 25.4811986], [-80.432824, 25.4628292],
-          [-80.440205, 25.4627962], [-80.440217, 25.471957], [-80.440237, 25.481156], [-80.44025, 25.488349],
-          [-80.44027, 25.499516], [-80.440277, 25.503975], [-80.44028, 25.507025], [-80.440286, 25.510692],
-          [-80.44029, 25.51443], [-80.44766, 25.514407], [-80.44767, 25.51079], [-80.44768, 25.50372],
-          [-80.44769, 25.4995], [-80.4477, 25.49525], [-80.44771, 25.49004], [-80.44772, 25.48112],
-          [-80.44773, 25.47466], [-80.44775, 25.46276], [-80.45508, 25.46272], [-80.45512, 25.48107],
-          [-80.45513, 25.48625], [-80.45515, 25.49946], [-80.45516, 25.50312], [-80.45518, 25.51436],
-          [-80.4625, 25.51433], [-80.46255, 25.49944], [-80.46257, 25.49185], [-80.46259, 25.48103],
-          [-80.46262, 25.46267], [-80.47728, 25.46261], [-80.4773, 25.47177], [-80.47734, 25.49089],
-          [-80.47735, 25.4994], [-80.47738, 25.51427], [-80.4847, 25.51424], [-80.48472, 25.50682],
-          [-80.48474, 25.49938], [-80.48477, 25.48814], [-80.4848, 25.47173], [-80.48482, 25.46258],
-          [-80.4921, 25.46255], [-80.49215, 25.48098], [-80.49217, 25.49079], [-80.49218, 25.49935],
-          [-80.4922, 25.50806], [-80.49222, 25.51421], [-80.4995, 25.51418], [-80.4995, 25.48095],
-          [-80.4995, 25.46251], [-80.5069, 25.46248], [-80.5069, 25.48092], [-80.5069, 25.4993],
-          [-80.5069, 25.51415], [-80.5143, 25.51411], [-80.5143, 25.49927], [-80.5143, 25.48088],
-          [-80.5143, 25.46244], [-80.5217, 25.46241], [-80.5217, 25.51408], [-80.5143, 25.51411],
-          [-80.5143, 25.46244], [-80.5069, 25.46248], [-80.4995, 25.46251], [-80.4921, 25.46255],
-          [-80.48482, 25.46258], [-80.47728, 25.46261], [-80.46262, 25.46267], [-80.45508, 25.46272],
-          [-80.44775, 25.46276], [-80.440217, 25.471957], [-80.440205, 25.4627962], [-80.432824, 25.4628292],
-          [-80.4287995, 25.462851], [-80.428807, 25.459325], [-80.42881, 25.457198], [-80.428815, 25.453671],
-          [-80.42882, 25.451475], [-80.428827, 25.447948], [-80.42883, 25.445582], [-80.42884, 25.442054],
-          [-80.42884, 25.440315], [-80.42884, 25.438255], [-80.42152, 25.43829], [-80.42151, 25.44208],
-          [-80.4215, 25.44561], [-80.42149, 25.44965], [-80.42148, 25.4537], [-80.42147, 25.45722],
-          [-80.42146, 25.46288], [-80.41408, 25.46292], [-80.4037996, 25.4629855], [-80.403927, 25.4778905],
-          [-80.4048218, 25.4778824], [-80.4048645, 25.4803748], [-80.4119385, 25.4803037], [-80.4120554, 25.4802975],
-          [-80.4120765, 25.4814287]
-        ]]
+    // ===== Boundary loading (GeoJSON from file) =====
+let map, autocomplete, marker;
+let boundaryPolygons = [];        // keep polygon refs so we can clear/redraw
+let homesteadBounds = null;       // LatLngBounds used for fit + autocomplete bias
+let homesteadGeoJSON = null;      // the loaded (and repaired) Feature
+
+function toLatLng(path) {
+  // path is an array of [lng, lat]
+  return path.map(([lng, lat]) => ({ lat, lng }));
+}
+function clearPolygons() {
+  boundaryPolygons.forEach(p => p.setMap(null));
+  boundaryPolygons = [];
+}
+function addPolygon(latlngRings) {
+  const poly = new google.maps.Polygon({
+    paths: latlngRings,                   // [outerRing, hole1, hole2, ...]
+    strokeColor: "#ef4444",
+    strokeOpacity: 1,
+    strokeWeight: 2,
+    fillColor: "#ef4444",
+    fillOpacity: 0.18
+  });
+  poly.setMap(map);
+  boundaryPolygons.push(poly);
+  // extend bounds by the outer ring
+  latlngRings[0].forEach(pt => homesteadBounds.extend(pt));
+}
+function drawGeoJSON(geojson) {
+  clearPolygons();
+  homesteadBounds = new google.maps.LatLngBounds();
+
+  const g = geojson.geometry;
+  if (g.type === "Polygon") {
+    const latlngRings = g.coordinates.map(r => toLatLng(r));
+    addPolygon(latlngRings);
+  } else if (g.type === "MultiPolygon") {
+    g.coordinates.forEach(poly => {
+      const latlngRings = poly.map(r => toLatLng(r));
+      addPolygon(latlngRings);
+    });
+  } else {
+    console.warn("Unsupported geometry:", g.type);
+  }
+
+  if (!homesteadBounds.isEmpty()) {
+    map.fitBounds(homesteadBounds);
+    if (autocomplete) autocomplete.setBounds(homesteadBounds);
+  }
+}
+
+// Repair self-intersections to avoid “striped” fill
+function repairPolygon(feature) {
+  try {
+    const unkinked = turf.unkinkPolygon(feature);
+    if (unkinked?.features?.length) {
+      if (unkinked.features.length === 1) {
+        return unkinked.features[0]; // valid Polygon
       }
-    };
+      // combine pieces into a MultiPolygon
+      return {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "MultiPolygon",
+          coordinates: unkinked.features.map(f => f.geometry.coordinates)
+        }
+      };
+    }
+  } catch (e) {
+    console.warn("unkink failed, trying buffer(0):", e);
+  }
+  try {
+    // buffer(0) often fixes tiny topology issues
+    return turf.buffer(feature, 0, { units: "meters" });
+  } catch (e2) {
+    console.warn("buffer(0) failed:", e2);
+  }
+  return feature; // fallback
+}
 
-    let map, autocomplete, marker, boundaryPolygon, homesteadBounds;
+async function loadHomesteadGeoJSON() {
+  const res = await fetch("./homestead_boundary.geojson", { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load homestead_boundary.geojson");
+  const raw = await res.json();
 
-    // ===== Google Maps init (global; callback must find this) =====
-    function initMap() {
-      const mapCenter = { lat: 25.4687, lng: -80.4776 };
-      map = new google.maps.Map(document.getElementById("map-container"), {
-        center: mapCenter, zoom: 13,
-        mapTypeControl: false, streetViewControl: false
-      });
+  // normalize to a single Feature
+  let feature;
+  if (raw.type === "FeatureCollection") feature = raw.features[0];
+  else if (raw.type === "Feature") feature = raw;
+  else feature = { type: "Feature", properties: {}, geometry: raw.geometry || raw };
 
-      // Build polygon paths
-      const coords = homesteadBoundary.geometry.coordinates[0].map(([lng, lat]) => ({ lat, lng }));
+  homesteadGeoJSON = repairPolygon(feature);
+  drawGeoJSON(homesteadGeoJSON);
+}
 
-      // Draw polygon (reuse a single overlay)
-      boundaryPolygon = new google.maps.Polygon({
-        paths: coords,
-        strokeColor: "#ef4444", strokeOpacity: 1, strokeWeight: 2,
-        fillColor: "#ef4444", fillOpacity: 0.18
-      });
-      boundaryPolygon.setMap(map);
+// ===== Google Maps init (global; callback must find this) =====
+async function initMap() {
+  const mapCenter = { lat: 25.4687, lng: -80.4776 };
+  map = new google.maps.Map(document.getElementById("map-container"), {
+    center: mapCenter,
+    zoom: 13,
+    mapTypeControl: false,
+    streetViewControl: false
+  });
 
-      // Fit to bounds and keep for Autocomplete bias
-      homesteadBounds = new google.maps.LatLngBounds();
-      coords.forEach(c => homesteadBounds.extend(c));
-      map.fitBounds(homesteadBounds);
+  // Load and draw official boundary from file (handles Polygon/MultiPolygon)
+  await loadHomesteadGeoJSON();
+
+  // NOTE: your existing Autocomplete setup continues below this function
+  // (If your autocomplete code appears later in the file, leave it as-is;
+  // it will see homesteadBounds and bias suggestions correctly.)
+}
+
 
       // Autocomplete setup (type-ahead)
       const input = document.getElementById("addressInput");
@@ -367,4 +418,5 @@
   </script>
 </body>
 </html>
+
 
