@@ -197,40 +197,64 @@
       input.value = v;
     });
 
-    // ===== Boundary loading (GeoJSON from file) =====
-    let map, autocomplete, marker;
-    let boundaryPolygons = [];
-    let homesteadBounds = null;
-    let homesteadGeoJSON = null;
+    // ===== City boundaries (multi-city) =====
+const cityConfigs = {
+  homestead: {
+    name: "Homestead, FL",
+    file: "./homestead_boundary.geojson",
+    color: "#ef4444",
+  },
+  floridacity: {
+    name: "Florida City, FL",
+    file: "./floridacity_boundary.geojson", // add this file to your repo
+    color: "#3b82f6",
+  },
+};
+let currentCityKey = "homestead";
 
-    function toLatLng(path) { return path.map(([lng, lat]) => ({ lat, lng })); }
-    function clearPolygons() { boundaryPolygons.forEach(p => p.setMap(null)); boundaryPolygons = []; }
-    function addPolygon(latlngRings) {
-      const poly = new google.maps.Polygon({
-        paths: latlngRings,
-        strokeColor: "#ef4444", strokeOpacity: 1, strokeWeight: 2,
-        fillColor: "#ef4444", fillOpacity: 0.18
-      });
-      poly.setMap(map);
-      boundaryPolygons.push(poly);
-      latlngRings[0].forEach(pt => homesteadBounds.extend(pt));
-    }
-    function drawGeoJSON(geojson) {
-      clearPolygons();
-      homesteadBounds = new google.maps.LatLngBounds();
-      const g = geojson.geometry;
-      if (g.type === "Polygon") {
-        addPolygon(g.coordinates.map(r => toLatLng(r)));
-      } else if (g.type === "MultiPolygon") {
-        g.coordinates.forEach(poly => addPolygon(poly.map(r => toLatLng(r))));
-      } else {
-        console.warn("Unsupported geometry:", g.type);
-      }
-      if (!homesteadBounds.isEmpty()) {
-        map.fitBounds(homesteadBounds);
-        if (autocomplete) autocomplete.setBounds(homesteadBounds);
-      }
-    }
+// ===== Boundary loading (GeoJSON from file) =====
+let map, autocomplete, marker;
+let boundaryPolygons = [];
+let boundaryBounds = null;    // renamed from homesteadBounds
+let boundaryGeoJSON = null;   // renamed from homesteadGeoJSON
+
+function toLatLng(path) { return path.map(([lng, lat]) => ({ lat, lng })); }
+function clearPolygons() { boundaryPolygons.forEach(p => p.setMap(null)); boundaryPolygons = []; }
+
+function addPolygon(latlngRings, strokeColor) {
+  const poly = new google.maps.Polygon({
+    paths: latlngRings,
+    strokeColor,
+    strokeOpacity: 1,
+    strokeWeight: 2,
+    fillColor: strokeColor,
+    fillOpacity: 0.18,
+  });
+  poly.setMap(map);
+  boundaryPolygons.push(poly);
+  latlngRings[0].forEach(pt => boundaryBounds.extend(pt));
+}
+
+function drawGeoJSON(geojson, strokeColor = "#ef4444") {
+  clearPolygons();
+  boundaryBounds = new google.maps.LatLngBounds();
+
+  const g = geojson.geometry;
+  const add = (coords) => addPolygon(coords.map(r => toLatLng(r)), strokeColor);
+
+  if (g.type === "Polygon") {
+    add(g.coordinates);
+  } else if (g.type === "MultiPolygon") {
+    g.coordinates.forEach(poly => add(poly));
+  } else {
+    console.warn("Unsupported geometry:", g.type);
+  }
+
+  if (!boundaryBounds.isEmpty()) {
+    map.fitBounds(boundaryBounds);
+    if (autocomplete) autocomplete.setBounds(boundaryBounds);
+  }
+}
     function repairPolygon(feature) {
       try {
         const unkinked = turf.unkinkPolygon(feature);
@@ -246,18 +270,23 @@
       catch (e2) { console.warn("buffer(0) failed:", e2); }
       return feature;
     }
-    async function loadHomesteadGeoJSON() {
-      const res = await fetch("./homestead_boundary.geojson", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to load homestead_boundary.geojson");
-      const raw = await res.json();
-      let feature;
-      if (raw.type === "FeatureCollection") feature = raw.features[0];
-      else if (raw.type === "Feature") feature = raw;
-      else feature = { type: "Feature", properties: {}, geometry: raw.geometry || raw };
-      homesteadGeoJSON = repairPolygon(feature);
-      drawGeoJSON(homesteadGeoJSON);
-    }
+    async function loadCityBoundary(cityKey) {
+  const cfg = cityConfigs[cityKey];
+  if (!cfg) throw new Error("Unknown city key: " + cityKey);
 
+  const res = await fetch(cfg.file, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load boundary file: " + cfg.file);
+
+  const raw = await res.json();
+  let feature;
+  if (raw.type === "FeatureCollection") feature = raw.features[0];
+  else if (raw.type === "Feature") feature = raw;
+  else feature = { type: "Feature", properties: {}, geometry: raw.geometry || raw };
+
+  // optional repair if needed
+  boundaryGeoJSON = repairPolygon(feature);
+  drawGeoJSON(boundaryGeoJSON, cfg.color);
+}
     // ===== Google Maps init (global; callback must find this) =====
     async function initMap() {
       const mapCenter = { lat: 25.4687, lng: -80.4776 };
@@ -373,4 +402,5 @@
   </script>
 </body>
 </html>
+
 
