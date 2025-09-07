@@ -201,16 +201,19 @@
 const cityConfigs = {
   homestead: {
     name: "Homestead, FL",
+    noun: "the Municipality of Homestead",
     file: "./homestead_boundary.geojson",
     color: "#ef4444",
   },
   floridacity: {
     name: "Florida City, FL",
-    file: "./floridacity_boundary.geojson", // add this file to your repo
+    noun: "the City of Florida City",
+    file: "./floridacity_boundary.geojson",
     color: "#3b82f6",
   },
 };
-let currentCityKey = "homestead";
+
+let currentCityKey = null; // will be set automatically based on address
 
 // ===== Boundary loading (GeoJSON from file) =====
 let map, autocomplete, marker;
@@ -270,6 +273,112 @@ function drawGeoJSON(geojson, strokeColor = "#ef4444") {
       catch (e2) { console.warn("buffer(0) failed:", e2); }
       return feature;
     }
+    // ===== Multi-city loading/cache =====
+let map, autocomplete, marker;
+let boundaryPolygons = [];
+let boundaryBounds = null;
+let boundaryGeoJSON = null;   // currently shown city's geometry
+const cityCache = {};         // { cityKey: { feature, bounds } }
+
+function clearPolygons() {
+  boundaryPolygons.forEach(p => p.setMap(null));
+  boundaryPolygons = [];
+}
+
+function toLatLng(path) { return path.map(([lng, lat]) => ({ lat, lng })); }
+
+function drawGeoJSON(geojson, strokeColor = "#ef4444") {
+  clearPolygons();
+  boundaryBounds = new google.maps.LatLngBounds();
+
+  const g = geojson.geometry;
+  const add = (coords) => {
+    const latlngRings = coords.map(r => toLatLng(r));
+    const poly = new google.maps.Polygon({
+      paths: latlngRings,
+      strokeColor,
+      strokeOpacity: 1,
+      strokeWeight: 2,
+      fillColor: strokeColor,
+      fillOpacity: 0.18
+    });
+    poly.setMap(map);
+    boundaryPolygons.push(poly);
+    latlngRings[0].forEach(pt => boundaryBounds.extend(pt));
+  };
+
+  if (g.type === "Polygon") add(g.coordinates);
+  else if (g.type === "MultiPolygon") g.coordinates.forEach(add);
+
+  if (!boundaryBounds.isEmpty()) {
+    map.fitBounds(boundaryBounds);
+  }
+}
+
+async function loadCityFeature(cityKey) {
+  // return cached
+  if (cityCache[cityKey]?.feature) return cityCache[cityKey];
+
+  const cfg = cityConfigs[cityKey];
+  if (!cfg) throw new Error("Unknown city key: " + cityKey);
+
+  const res = await fetch(cfg.file, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load boundary file: " + cfg.file);
+  const raw = await res.json();
+
+  // normalize to Feature
+  let feature;
+  if (raw.type === "FeatureCollection") feature = raw.features[0];
+  else if (raw.type === "Feature") feature = raw;
+  else feature = { type: "Feature", properties: {}, geometry: raw.geometry || raw };
+
+  // optional repair for self-intersections
+  feature = repairPolygon(feature);
+
+  // precompute bounds
+  const tempBounds = new google.maps.LatLngBounds();
+  const g = feature.geometry;
+  const addBounds = (coords) => {
+    const ring = toLatLng(coords[0]); // outer ring for bounds
+    ring.forEach(pt => tempBounds.extend(pt));
+  };
+  if (g.type === "Polygon") addBounds(g.coordinates);
+  else if (g.type === "MultiPolygon") g.coordinates.forEach(addBounds);
+
+  cityCache[cityKey] = { feature, bounds: tempBounds };
+  return cityCache[cityKey];
+}
+
+// Try each city and return the key that contains the point (or null)
+function detectCityKeyForPoint(latLng) {
+  const pt = turf.point([latLng.lng(), latLng.lat()]);
+  for (const key of Object.keys(cityConfigs)) {
+    const cached = cityCache[key];
+    if (!cached) continue; // must be loaded first
+    const g = cached.feature.geometry;
+    const inside =
+      g.type === "Polygon"
+        ? turf.booleanPointInPolygon(pt, turf.polygon(g.coordinates), { ignoreBoundary: false })
+        : g.type === "MultiPolygon"
+        ? turf.booleanPointInPolygon(pt, turf.multiPolygon(g.coordinates), { ignoreBoundary: false })
+        : false;
+    if (inside) return key;
+  }
+  return null;
+}
+
+function updateCityUI() {
+  const cfg = currentCityKey ? cityConfigs[currentCityKey] : null;
+  const titleEl = document.getElementById("pageTitle");
+  const addr = document.getElementById("addressInput");
+  if (cfg) {
+    if (titleEl) titleEl.textContent = `Check if Your Address is Within ${cfg.noun}`;
+    if (addr) addr.placeholder = `Enter address in ${cfg.name}`;
+  } else {
+    if (titleEl) titleEl.textContent = `Check if Your Address is Within the Municipality`;
+    if (addr) addr.placeholder = `Enter address`;
+  }
+}
     async function loadCityBoundary(cityKey) {
   const cfg = cityConfigs[cityKey];
   if (!cfg) throw new Error("Unknown city key: " + cityKey);
@@ -402,5 +511,6 @@ function drawGeoJSON(geojson, strokeColor = "#ef4444") {
   </script>
 </body>
 </html>
+
 
 
