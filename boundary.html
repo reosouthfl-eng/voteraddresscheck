@@ -73,7 +73,46 @@
   </div>
 
   <script>
-    let map, marker, autocomplete, boundary;
+    let map, marker, autocomplete, boundary, currentCityKey;
+
+    const cityConfigs = {
+      homestead: {
+        name: "Homestead",
+        geojson: "homestead_boundary.geojson",
+        style: {
+          strokeColor: "#FF0000",
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: "#FF0000",
+          fillOpacity: 0.15,
+        },
+      },
+      floridaCity: {
+        name: "Florida City",
+        geojson: "floridacity_boundary.geojson",
+        style: {
+          strokeColor: "#0000FF",
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: "#0000FF",
+          fillOpacity: 0.15,
+        },
+      },
+    };
+
+    async function loadCityBoundary(cityKey) {
+      currentCityKey = cityKey;
+      const config = cityConfigs[cityKey];
+      const resp = await fetch(config.geojson);
+      const geo = await resp.json();
+      boundary = geo.features ? geo.features[0] : geo;
+      const coords = boundary.geometry.coordinates[0].map(([lng, lat]) => ({ lat, lng }));
+      new google.maps.Polygon({
+        paths: coords,
+        map,
+        ...config.style,
+      });
+    }
 
     async function initMap() {
       map = new google.maps.Map(document.getElementById("map"), {
@@ -90,26 +129,13 @@
       autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
         if (!place.geometry) {
-          showResult(false, "No details available for that address.");
+          displayResults(false, "No details available for that address.");
           return;
         }
         checkPoint(place.geometry.location);
       });
 
-      // Load boundary GeoJSON
-      const resp = await fetch("homestead_boundary.geojson");
-      const geo = await resp.json();
-      boundary = geo.features[0];
-      const coords = boundary.geometry.coordinates[0].map(([lng, lat]) => ({ lat, lng }));
-      new google.maps.Polygon({
-        paths: coords,
-        strokeColor: "#FF0000",
-        strokeOpacity: 0.8,
-        strokeWeight: 2,
-        fillColor: "#FF0000",
-        fillOpacity: 0.15,
-        map,
-      });
+      await loadCityBoundary("homestead");
 
       map.addListener("click", (e) => checkPoint(e.latLng));
 
@@ -121,14 +147,14 @@
       const point = turf.point([latLng.lng(), latLng.lat()]);
       const poly = turf.polygon(boundary.geometry.coordinates);
       const inside = turf.booleanPointInPolygon(point, poly);
-      showResult(inside);
+      displayResults(inside);
       if (!marker) marker = new google.maps.Marker({ map });
       marker.setPosition(latLng);
       map.panTo(latLng);
       map.setZoom(15);
     }
 
-    function showResult(inside, msg) {
+    function displayResults(inside, msg) {
       const el = document.getElementById("result");
       el.style.display = "block";
       el.className = "";
@@ -136,12 +162,13 @@
         el.textContent = msg;
         return;
       }
+      const cityName = cityConfigs[currentCityKey].name;
       if (inside) {
         el.classList.add("ok");
-        el.textContent = "✔ Address is inside Homestead.";
+        el.textContent = `✔ Address is inside ${cityName}.`;
       } else {
         el.classList.add("out");
-        el.textContent = "✘ Address is outside Homestead.";
+        el.textContent = `✘ Address is outside ${cityName}.`;
       }
     }
 
