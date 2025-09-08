@@ -164,21 +164,7 @@
     </div>
   </div>
 
-  <!-- ===== Corrected single script block (do not nest another <script>) ===== -->
   <script>
-   <script>
-  // ===== Menu toggle =====
-  document.addEventListener("DOMContentLoaded", () => {
-    const hamburgerMenu = document.getElementById("hamburgerMenu");
-    const menuDropdown = document.getElementById("menuDropdown");
-    hamburgerMenu.addEventListener("click", (e) => {
-      e.stopPropagation();
-      menuDropdown.style.display = menuDropdown.style.display === "block" ? "none" : "block";
-    });
-    document.addEventListener("click", (e) => {
-      if (!menuDropdown.contains(e.target) && !hamburgerMenu.contains(e.target)) {
-        menuDropdown.style.display = "none";
-      }
     // ===== Menu toggle =====
     document.addEventListener("DOMContentLoaded", () => {
       const hamburgerMenu = document.getElementById("hamburgerMenu");
@@ -193,40 +179,6 @@
         }
       });
     });
-  });
-
-  // ===== Phone formatter =====
-  const phoneNumberInput = document.getElementById("phoneNumberInput");
-  phoneNumberInput.addEventListener("input", (event) => {
-    const input = event.target;
-    let v = input.value.replace(/\D/g, "").slice(0, 10);
-    if (v.length > 6) v = `(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6)}`;
-    else if (v.length > 3) v = `(${v.slice(0,3)}) ${v.slice(3)}`;
-    input.value = v;
-  });
-
-  // ===== Boundary loading (GeoJSON from file) =====
-  let map, autocomplete, marker;
-  let boundaryPolygons = [];        // keep polygon refs so we can clear/redraw
-  let homesteadBounds = null;       // LatLngBounds used for fit + autocomplete bias
-  let homesteadGeoJSON = null;      // the loaded (and repaired) Feature
-
-  function toLatLng(path) {
-    // path is an array of [lng, lat]
-    return path.map(([lng, lat]) => ({ lat, lng }));
-  }
-  function clearPolygons() {
-    boundaryPolygons.forEach(p => p.setMap(null));
-    boundaryPolygons = [];
-  }
-  function addPolygon(latlngRings) {
-    const poly = new google.maps.Polygon({
-      paths: latlngRings,                   // [outerRing, hole1, hole2, ...]
-      strokeColor: "#ef4444",
-      strokeOpacity: 1,
-      strokeWeight: 2,
-      fillColor: "#ef4444",
-      fillOpacity: 0.18
 
     // ===== Phone formatter =====
     const phoneNumberInput = document.getElementById("phoneNumberInput");
@@ -237,258 +189,110 @@
       else if (v.length > 3) v = `(${v.slice(0,3)}) ${v.slice(3)}`;
       input.value = v;
     });
-    poly.setMap(map);
-    boundaryPolygons.push(poly);
-    // extend bounds by the outer ring
-    latlngRings[0].forEach(pt => homesteadBounds.extend(pt));
-  }
-  function drawGeoJSON(geojson) {
-    clearPolygons();
-    homesteadBounds = new google.maps.LatLngBounds();
 
-    const g = geojson.geometry;
-    if (g.type === "Polygon") {
-      const latlngRings = g.coordinates.map(r => toLatLng(r));
-      addPolygon(latlngRings);
-    } else if (g.type === "MultiPolygon") {
-      g.coordinates.forEach(poly => {
-        const latlngRings = poly.map(r => toLatLng(r));
-        addPolygon(latlngRings);
+    // ===== Homestead boundary (GeoJSON) =====
+    const homesteadBoundary = {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-80.4120765, 25.4814287], [-80.4121837, 25.4850587], [-80.4122839, 25.4923133], [-80.4123524, 25.4996034],
+          [-80.4142083, 25.4995867], [-80.414213, 25.5144809], [-80.4216834, 25.5144577], [-80.4217181, 25.4995736],
+          [-80.429074, 25.4995493], [-80.4291071, 25.4812239], [-80.4327771, 25.4811986], [-80.432824, 25.4628292],
+          [-80.440205, 25.4627962], [-80.440217, 25.471957], [-80.440237, 25.481156], [-80.44025, 25.488349],
+          [-80.44027, 25.499516], [-80.440277, 25.503975], [-80.44028, 25.507025], [-80.440286, 25.510692],
+          [-80.44029, 25.51443], [-80.44766, 25.514407], [-80.44767, 25.51079], [-80.44768, 25.50372],
+          [-80.44769, 25.4995], [-80.4477, 25.49525], [-80.44771, 25.49004], [-80.44772, 25.48112],
+          [-80.44773, 25.47466], [-80.44775, 25.46276], [-80.45508, 25.46272], [-80.45512, 25.48107],
+          [-80.45513, 25.48625], [-80.45515, 25.49946], [-80.45516, 25.50312], [-80.45518, 25.51436],
+          [-80.4625, 25.51433], [-80.46255, 25.49944], [-80.46257, 25.49185], [-80.46259, 25.48103],
+          [-80.46262, 25.46267], [-80.47728, 25.46261], [-80.4773, 25.47177], [-80.47734, 25.49089],
+          [-80.47735, 25.4994], [-80.47738, 25.51427], [-80.4847, 25.51424], [-80.48472, 25.50682],
+          [-80.48474, 25.49938], [-80.48477, 25.48814], [-80.4848, 25.47173], [-80.48482, 25.46258],
+          [-80.4921, 25.46255], [-80.49215, 25.48098], [-80.49217, 25.49079], [-80.49218, 25.49935],
+          [-80.4922, 25.50806], [-80.49222, 25.51421], [-80.4995, 25.51418], [-80.4995, 25.48095],
+          [-80.4995, 25.46251], [-80.5069, 25.46248], [-80.5069, 25.48092], [-80.5069, 25.4993],
+          [-80.5069, 25.51415], [-80.5143, 25.51411], [-80.5143, 25.49927], [-80.5143, 25.48088],
+          [-80.5143, 25.46244], [-80.5217, 25.46241], [-80.5217, 25.51408], [-80.5143, 25.51411],
+          [-80.5143, 25.46244], [-80.5069, 25.46248], [-80.4995, 25.46251], [-80.4921, 25.46255],
+          [-80.48482, 25.46258], [-80.47728, 25.46261], [-80.46262, 25.46267], [-80.45508, 25.46272],
+          [-80.44775, 25.46276], [-80.440217, 25.471957], [-80.440205, 25.4627962], [-80.432824, 25.4628292],
+          [-80.4287995, 25.462851], [-80.428807, 25.459325], [-80.42881, 25.457198], [-80.428815, 25.453671],
+          [-80.42882, 25.451475], [-80.428827, 25.447948], [-80.42883, 25.445582], [-80.42884, 25.442054],
+          [-80.42884, 25.440315], [-80.42884, 25.438255], [-80.42152, 25.43829], [-80.42151, 25.44208],
+          [-80.4215, 25.44561], [-80.42149, 25.44965], [-80.42148, 25.4537], [-80.42147, 25.45722],
+          [-80.42146, 25.46288], [-80.41408, 25.46292], [-80.4037996, 25.4629855], [-80.403927, 25.4778905],
+          [-80.4048218, 25.4778824], [-80.4048645, 25.4803748], [-80.4119385, 25.4803037], [-80.4120554, 25.4802975],
+          [-80.4120765, 25.4814287]
+        ]]
+      }
+    };
 
-    // ===== Boundary loading (GeoJSON from file) =====
-    let map, autocomplete, marker;
-    let boundaryPolygons = [];
-    let homesteadBounds = null;
-    let homesteadGeoJSON = null;
+    let map, autocomplete, marker, boundaryPolygon, homesteadBounds;
 
-    function toLatLng(path) { return path.map(([lng, lat]) => ({ lat, lng })); }
-    function clearPolygons() { boundaryPolygons.forEach(p => p.setMap(null)); boundaryPolygons = []; }
-    function addPolygon(latlngRings) {
-      const poly = new google.maps.Polygon({
-        paths: latlngRings,
+    // ===== Google Maps init (global; callback must find this) =====
+    function initMap() {
+      const mapCenter = { lat: 25.4687, lng: -80.4776 };
+      map = new google.maps.Map(document.getElementById("map-container"), {
+        center: mapCenter, zoom: 13,
+        mapTypeControl: false, streetViewControl: false
+      });
+
+      // Build polygon paths
+      const coords = homesteadBoundary.geometry.coordinates[0].map(([lng, lat]) => ({ lat, lng }));
+
+      // Draw polygon (reuse a single overlay)
+      boundaryPolygon = new google.maps.Polygon({
+        paths: coords,
         strokeColor: "#ef4444", strokeOpacity: 1, strokeWeight: 2,
         fillColor: "#ef4444", fillOpacity: 0.18
       });
-    } else {
-      console.warn("Unsupported geometry:", g.type);
-      poly.setMap(map);
-      boundaryPolygons.push(poly);
-      latlngRings[0].forEach(pt => homesteadBounds.extend(pt));
-    }
+      boundaryPolygon.setMap(map);
 
-    if (!homesteadBounds.isEmpty()) {
-      map.fitBounds(homesteadBounds);
-      if (autocomplete) autocomplete.setBounds(homesteadBounds);
-    function drawGeoJSON(geojson) {
-      clearPolygons();
+      // Fit to bounds and keep for Autocomplete bias
       homesteadBounds = new google.maps.LatLngBounds();
-      const g = geojson.geometry;
-      if (g.type === "Polygon") {
-        addPolygon(g.coordinates.map(r => toLatLng(r)));
-      } else if (g.type === "MultiPolygon") {
-        g.coordinates.forEach(poly => addPolygon(poly.map(r => toLatLng(r))));
-      } else {
-        console.warn("Unsupported geometry:", g.type);
-      }
-      if (!homesteadBounds.isEmpty()) {
-        map.fitBounds(homesteadBounds);
-        if (autocomplete) autocomplete.setBounds(homesteadBounds);
-      }
-    }
-  }
+      coords.forEach(c => homesteadBounds.extend(c));
+      map.fitBounds(homesteadBounds);
 
-  // Repair self-intersections to avoid “striped” fill
-  function repairPolygon(feature) {
-    try {
-      const unkinked = turf.unkinkPolygon(feature);
-      if (unkinked?.features?.length) {
-        if (unkinked.features.length === 1) {
-          return unkinked.features[0]; // valid Polygon
-    function repairPolygon(feature) {
-      try {
-        const unkinked = turf.unkinkPolygon(feature);
-        if (unkinked?.features?.length) {
-          if (unkinked.features.length === 1) return unkinked.features[0];
-          return {
-            type: "Feature", properties: {},
-            geometry: { type: "MultiPolygon", coordinates: unkinked.features.map(f => f.geometry.coordinates) }
-          };
-        }
-        // combine pieces into a MultiPolygon
-        return {
-          type: "Feature",
-          properties: {},
-          geometry: {
-            type: "MultiPolygon",
-            coordinates: unkinked.features.map(f => f.geometry.coordinates)
-          }
-        };
-      }
-    } catch (e) {
-      console.warn("unkink failed, trying buffer(0):", e);
-      } catch (e) { console.warn("unkink failed:", e); }
-      try { return turf.buffer(feature, 0, { units: "meters" }); }
-      catch (e2) { console.warn("buffer(0) failed:", e2); }
-      return feature;
-    }
-    try {
-      // buffer(0) often fixes tiny topology issues
-      return turf.buffer(feature, 0, { units: "meters" });
-    } catch (e2) {
-      console.warn("buffer(0) failed:", e2);
-    async function loadHomesteadGeoJSON() {
-      const res = await fetch("./homestead_boundary.geojson", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to load homestead_boundary.geojson");
-      const raw = await res.json();
-      let feature;
-      if (raw.type === "FeatureCollection") feature = raw.features[0];
-      else if (raw.type === "Feature") feature = raw;
-      else feature = { type: "Feature", properties: {}, geometry: raw.geometry || raw };
-      homesteadGeoJSON = repairPolygon(feature);
-      drawGeoJSON(homesteadGeoJSON);
-    }
-    return feature; // fallback
-  }
-
-  async function loadHomesteadGeoJSON() {
-    const res = await fetch("./homestead_boundary.geojson", { cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to load homestead_boundary.geojson");
-    const raw = await res.json();
-
-    // normalize to a single Feature
-    let feature;
-    if (raw.type === "FeatureCollection") feature = raw.features[0];
-    else if (raw.type === "Feature") feature = raw;
-    else feature = { type: "Feature", properties: {}, geometry: raw.geometry || raw };
-
-    homesteadGeoJSON = repairPolygon(feature);
-    drawGeoJSON(homesteadGeoJSON);
-  }
-
-  // ===== Google Maps init (global; callback must find this) =====
-  async function initMap() {
-    const mapCenter = { lat: 25.4687, lng: -80.4776 };
-    map = new google.maps.Map(document.getElementById("map-container"), {
-      center: mapCenter,
-      zoom: 13,
-      mapTypeControl: false,
-      streetViewControl: false
-    });
-
-    // Load and draw official boundary from file (handles Polygon/MultiPolygon)
-    await loadHomesteadGeoJSON();
-    // ===== Google Maps init (global; callback must find this) =====
-    async function initMap() {
-      const mapCenter = { lat: 25.4687, lng: -80.4776 };
-      map = new google.maps.Map(document.getElementById("map-container"), {
-        center: mapCenter, zoom: 13, mapTypeControl: false, streetViewControl: false
-      });
-
-    // Autocomplete setup (type-ahead) — keep INSIDE initMap
-    const input = document.getElementById("addressInput");
-    autocomplete = new google.maps.places.Autocomplete(input, {
-      types: ["address"],
-      componentRestrictions: { country: "us" }
-    });
-    if (homesteadBounds) autocomplete.setBounds(homesteadBounds); // bias suggestions to Homestead
-      try { await loadHomesteadGeoJSON(); }
-      catch (err) { console.error("GeoJSON load failed:", err); }
-
-    autocomplete.addListener("place_changed", () => {
-      const place = autocomplete.getPlace();
-      if (!place.geometry) {
-        showResult(false, "No details available for that address.");
-        return;
-      }
-      displayResults(place.geometry.location);
-    });
-  }
-      // Autocomplete (keep INSIDE initMap)
+      // Autocomplete setup (type-ahead)
       const input = document.getElementById("addressInput");
-      autocomplete = new google.maps.places.Autocomplete(input, {
-        types: ["address"], componentRestrictions: { country: "us" }
-      });
-      if (homesteadBounds) autocomplete.setBounds(homesteadBounds);
+      autocomplete = new google.maps.places.Autocomplete(input, { types: ["address"], componentRestrictions: { country: "us" } });
+      autocomplete.setBounds(homesteadBounds); // bias suggestions to Homestead
 
-  // ===== Check & display =====
-  function displayResults(latLng) {
-    if (!homesteadGeoJSON) {
-      alert("Boundary not loaded.");
-      return;
       autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
-        if (!place.geometry) { showResult(false, "No details available for that address."); return; }
+        if (!place.geometry) {
+          showResult(false, "No details available for that address.");
+          return;
+        }
         displayResults(place.geometry.location);
       });
     }
-    const point = turf.point([latLng.lng(), latLng.lat()]);
-    const g = homesteadGeoJSON.geometry;
-
-    const isInside =
-      g.type === "Polygon"
-        ? turf.booleanPointInPolygon(point, turf.polygon(g.coordinates), { ignoreBoundary: false })
-        : g.type === "MultiPolygon"
-        ? turf.booleanPointInPolygon(point, turf.multiPolygon(g.coordinates), { ignoreBoundary: false })
-        : false;
-
-    // Reuse a single marker
-    if (!marker) {
-      marker = new google.maps.Marker({ position: latLng, map, title: "Location Checked" });
-    } else {
-      marker.setPosition(latLng);
-    // expose for Google callback
-    window.initMap = initMap;
 
     // ===== Check & display =====
     function displayResults(latLng) {
-      if (!homesteadGeoJSON) { alert("Boundary not loaded."); return; }
       const point = turf.point([latLng.lng(), latLng.lat()]);
-      const g = homesteadGeoJSON.geometry;
-      const isInside =
-        g.type === "Polygon"
-          ? turf.booleanPointInPolygon(point, turf.polygon(g.coordinates), { ignoreBoundary: false })
-          : g.type === "MultiPolygon"
-          ? turf.booleanPointInPolygon(point, turf.multiPolygon(g.coordinates), { ignoreBoundary: false })
-          : false;
+      const polygon = turf.polygon(homesteadBoundary.geometry.coordinates);
+      const isInside = turf.booleanPointInPolygon(point, polygon, { ignoreBoundary: false });
 
-      if (!marker) marker = new google.maps.Marker({ position: latLng, map, title: "Location Checked" });
-      else marker.setPosition(latLng);
+      // Reuse a single marker
+      if (!marker) {
+        marker = new google.maps.Marker({ position: latLng, map, title: "Location Checked" });
+      } else {
+        marker.setPosition(latLng);
+      }
       map.setCenter(latLng);
       map.setZoom(15);
 
       showResult(isInside);
     }
-    map.setCenter(latLng);
-    map.setZoom(15);
 
-    showResult(isInside);
-  }
-
-  function showResult(isInside, override) {
-    const el = document.getElementById("result");
-    el.style.display = "block";
-    el.classList.remove("outside");
-    if (override) { el.textContent = override; return; }
-
-    if (isInside) {
-      el.innerHTML = `
-        <ul style="list-style: disc; padding-left: 18px; margin: 0;">
-          <li><strong style="color: #15803d;">✔ Yes! Your address is in the Municipality of Homestead.</strong></li>
-          <li>📌 Please answer the questions below the map.</li>
-        </ul>`;
-    } else {
-      el.classList.add("outside");
-      el.innerHTML = `
-        <ul style="list-style: disc; padding-left: 18px; margin: 0;">
-          <li><strong style="color: #b91c1c;">❌ No, the address is not within the Municipality of Homestead.</strong></li>
-          <li>Think of 2 people you know in Homestead and share this campaign with them.</li>
-          <li>📢 <a href="https://yourcampaignlink.com" target="_blank" rel="noopener">Spread the word!</a></li>
-        </ul>`;
     function showResult(isInside, override) {
       const el = document.getElementById("result");
       el.style.display = "block";
       el.classList.remove("outside");
       if (override) { el.textContent = override; return; }
+
       if (isInside) {
         el.innerHTML = `
           <ul style="list-style: disc; padding-left: 18px; margin: 0;">
@@ -505,29 +309,19 @@
           </ul>`;
       }
     }
-  }
 
-  // ===== Popup & localStorage =====
-  function openPopup(){ document.getElementById("thankYouPopup").style.display = "block"; }
-  function closePopup(){ document.getElementById("thankYouPopup").style.display = "none"; }
-
-  function submitVoterData() {
-    const userName = document.getElementById("nameInput").value.trim();
-    const voterCount = document.getElementById("voterCountInput").value.trim();
-    const consent = document.getElementById("consent").checked;
-
-    if (!userName || !voterCount || Number(voterCount) <= 0) {
-      alert("Please enter your name and the number of voters at this address.");
-      return false;
     // ===== Popup & localStorage =====
     function openPopup(){ document.getElementById("thankYouPopup").style.display = "block"; }
     function closePopup(){ document.getElementById("thankYouPopup").style.display = "none"; }
+
     function submitVoterData() {
       const userName = document.getElementById("nameInput").value.trim();
       const voterCount = document.getElementById("voterCountInput").value.trim();
       const consent = document.getElementById("consent").checked;
+
       if (!userName || !voterCount || Number(voterCount) <= 0) {
-        alert("Please enter your name and the number of voters at this address."); return false;
+        alert("Please enter your name and the number of voters at this address.");
+        return false;
       }
       const today = new Date().toISOString().split("T")[0];
       const store = JSON.parse(localStorage.getItem("voterData") || "{}");
@@ -536,56 +330,25 @@
       localStorage.setItem("voterData", JSON.stringify(store));
       return true;
     }
-    const today = new Date().toISOString().split("T")[0];
-    const store = JSON.parse(localStorage.getItem("voterData") || "{}");
-    store[today] = store[today] || [];
-    store[today].push({ name: userName, count: Number(voterCount), pledged: consent });
-    localStorage.setItem("voterData", JSON.stringify(store));
-    return true;
-  }
 
-  function handleConfirmation() {
-    if (!submitVoterData()) return;
-    alert("Thank you for pledging your commitment. Remember to request/renew your vote-by-mail ballot on the top right corner of the home page.");
-    closePopup();
-  }
-
-  function validateAndSubmit() {
-    const nameInput = document.getElementById("nameInput");
-    const voterCountInput = document.getElementById("voterCountInput");
-    const phoneInput = document.getElementById("phoneNumberInput");
-
-    let ok = true;
-    [nameInput, voterCountInput, phoneInput].forEach(el => el.classList.remove("error"));
-
-    if (!nameInput.value.trim()) { nameInput.classList.add("error"); ok = false; }
-    const count = parseInt(voterCountInput.value, 10);
-    if (isNaN(count) || count <= 0) { voterCountInput.classList.add("error"); ok = false; }
-
-    const digits = phoneInput.value.replace(/\D/g, "");
-    if (phoneInput.value.trim() && digits.length !== 10) {
-      phoneInput.classList.add("error");
-      alert("Please enter a valid 10-digit phone number or leave it blank.");
-      ok = false;
     function handleConfirmation() {
       if (!submitVoterData()) return;
       alert("Thank you for pledging your commitment. Remember to request/renew your vote-by-mail ballot on the top right corner of the home page.");
       closePopup();
     }
-    if (!ok) return;
 
-    openPopup();
-  }
-</script>
     function validateAndSubmit() {
       const nameInput = document.getElementById("nameInput");
       const voterCountInput = document.getElementById("voterCountInput");
       const phoneInput = document.getElementById("phoneNumberInput");
+
       let ok = true;
       [nameInput, voterCountInput, phoneInput].forEach(el => el.classList.remove("error"));
+
       if (!nameInput.value.trim()) { nameInput.classList.add("error"); ok = false; }
       const count = parseInt(voterCountInput.value, 10);
       if (isNaN(count) || count <= 0) { voterCountInput.classList.add("error"); ok = false; }
+
       const digits = phoneInput.value.replace(/\D/g, "");
       if (phoneInput.value.trim() && digits.length !== 10) {
         phoneInput.classList.add("error");
@@ -593,17 +356,19 @@
         ok = false;
       }
       if (!ok) return;
+
       openPopup();
     }
   </script>
 
   <!-- Google Maps loader: keep this LAST; replace YOUR_API_KEY_HERE -->
-  <!-- Google Maps loader: keep this LAST -->
   <script async defer
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap">
   </script>
 </body>
 </html>
+
+
 
 
 
