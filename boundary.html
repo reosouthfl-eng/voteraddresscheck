@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://maps.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
   <link href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap" rel="stylesheet" />
 
   <style>
-    :root{ --ok:#15803d; --ok-bg:#ecfdf5; --no:#991b1b; --no-bg:#fef2f2; --muted:#6b7280; }
     body { font-family: 'Lato', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; background-color: #f4f4f9; }
     h1 { font-size: 14px; font-weight: bold; text-align: left; width: 92%; max-width: 420px; margin: 6px auto; }
     .row { width: 92%; max-width: 420px; margin: 8px auto; display: grid; grid-template-columns: 1fr; gap: 8px; }
@@ -21,18 +21,14 @@
     .row input:focus, select:focus { outline: none; border: 1px solid #0073e6; }
     .row input.error { border-color: #d93025; }
     .map-container { width: 92%; max-width: 420px; height: 420px; margin: 10px auto; border-radius: 12px; overflow:hidden; background:#e5e7eb; }
-    #result { margin-top: 10px; font-size: 14px; font-weight: bold; text-align: left; line-height: 1.6; padding: 10px; width: 92%; max-width: 420px; display: none; border-radius: 10px; margin: 10px auto; background: var(--ok-bg); color: var(--ok); }
-    #result.outside { background: var(--no-bg); color: var(--no); }
+    #result { margin-top: 10px; font-size: 14px; font-weight: bold; text-align: left; line-height: 1.6; padding: 10px; width: 92%; max-width: 420px; display: none; border-radius: 10px; margin: 10px auto; background: #ecfdf5; color: #065f46; }
+    #result.outside { background: #fef2f2; color: #991b1b; }
     .button-container { width: 92%; max-width: 420px; margin: 12px auto; text-align: center; }
     .button { width: 100%; padding: 12px 20px; font-size: 14px; background-color: #22c55e; color: white; border: none; border-radius: 10px; cursor: pointer; text-align: center; }
-
-    /* Popup */
     .popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid #ccc; border-radius: 12px; text-align: left; width: 92%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.18); z-index: 1300; }
     .sharebar { display:flex; gap:8px; margin-top:10px; }
     .sharebar a { flex:1; text-align:center; text-decoration:none; color:#fff; padding:10px; border-radius:10px; font-size:13px; }
     .wa{background:#25D366} .sms{background:#111827} .copy{background:#6b7280} .email{background:#2563eb}
-
-    /* Header / Hamburger */
     .header-wrapper { display:flex; align-items:center; justify-content:space-between; width:92%; max-width:420px; margin:8px auto 0; }
     #hamburgerMenu { background:none; border:none; font-size:24px; cursor:pointer; color:#111; }
     #menuDropdown { display:none; position:absolute; right:4%; top:48px; background:#fff; border-radius:10px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,.15); min-width:230px; z-index:1000; }
@@ -41,17 +37,15 @@
     #menuDropdown li:last-child { border-bottom:0; }
     #menuDropdown a { display:block; padding:10px 12px; color:#111; text-decoration:none; border-radius:6px; }
     #menuDropdown a:hover { background:#f3f4f6; }
-
-    /* Toast */
-    .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #111827; color: white; padding: 10px 14px; border-radius: 999px; font-size: 13px; display:none; z-index:1500; }
-    .sm { font-size: 12px; color: var(--muted); }
+      /* Consent alignment fix (mobile-safe) */
+    .consent-wrap{ width:92%; max-width:420px; margin:8px auto; display:flex; align-items:flex-start; gap:10px; }
+    .consent-wrap input[type="checkbox"]{ margin-top:2px; flex:0 0 auto; }
+    .consent-wrap label{ font-size:14px; font-weight:normal; line-height:1.35; text-align:left; flex:1 1 auto; }
   </style>
 
-  <!-- Turf.js for point-in-polygon -->
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 </head>
 <body>
-  <!-- Header with hamburger -->
   <div class="header-wrapper">
     <div style="height:24px;"></div>
     <button id="hamburgerMenu" aria-label="Open menu">☰</button>
@@ -74,7 +68,6 @@
       <option value="floridacity">Florida City</option>
     </select>
     <input type="text" id="addressInput" placeholder="Enter address here" aria-label="Address" />
-    <span class="sm" id="typeHint" aria-live="polite"></span>
   </div>
 
   <div class="map-container">
@@ -92,15 +85,12 @@
     <input type="number" id="voterCountInput" placeholder="Number of Voters" min="1" />
   </div>
   <div class="row">
-    <label for="phoneNumberInput">Enter your phone number (optional):</label>
+    <label for="phoneNumberInput">Enter your phone number:</label>
     <input type="tel" id="phoneNumberInput" placeholder="(123) 456-7890" inputmode="tel" />
   </div>
-  <div class="row">
-    <!-- Consent left-aligned with label -->
-    <label for="consentInline" style="display:flex; align-items:center; gap:8px; font-weight:normal;">
-      <input type="checkbox" id="consentInline" />
-      I consent to having my name included in campaign materials
-    </label>
+  <div class="consent-wrap">
+    <input type="checkbox" id="consentInline" />
+    <label for="consentInline">I consent to having my name included in campaign materials</label>
   </div>
   <div class="row">
     <label for="signatureInputMain">Your signature:</label>
@@ -111,7 +101,6 @@
     <button id="submitBtn" class="button">Pledge my support</button>
   </div>
 
-  <!-- Success Popup -->
   <div id="thankYouPopup" class="popup" role="dialog" aria-modal="true">
     <h2>Thank You for Your Support!</h2>
     <p>Your commitment makes a difference! By pledging your support, you're helping shape the future of our community.</p>
@@ -131,10 +120,8 @@
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
-
   <script>
-    // ---------- Hamburger menu ----------
+    // Hamburger menu toggle
     (function(){
       const btn = document.getElementById('hamburgerMenu');
       const dd = document.getElementById('menuDropdown');
@@ -149,253 +136,102 @@
       });
     })();
 
-    // ---------- City config (files must sit next to this HTML) ----------
-    const CITY_CONFIG = {
-      homestead:   { id: 'homestead',   name: 'Homestead',    file: './homestead_boundary.geojson',   center: { lat: 25.4687, lng: -80.4776 }, style: { stroke: '#ef4444', fill: '#ef4444' } },
-      floridacity: { id: 'floridacity', name: 'Florida City', file: './floridacity_boundary.geojson', center: { lat: 25.4477, lng: -80.4809 }, style: { stroke: '#0ea5e9', fill: '#0ea5e9' } }
-    };
-
-    // ---------- Elements ----------
     let map, autocomplete, marker, geocoder;
-    let currentCity = localStorage.getItem('lastCity') || 'homestead';
     let boundaryGeoJSON = null;
-    const cityCache = {};
-    const polygons = {};
 
     const citySelect = document.getElementById('citySelect');
     const addressInput = document.getElementById('addressInput');
     const resultEl = document.getElementById('result');
     const popup = document.getElementById('thankYouPopup');
     const closePopup = document.getElementById('closePopup');
-    const shareWa = document.getElementById('shareWa');
-    const shareSms = document.getElementById('shareSms');
-    const shareCopy = document.getElementById('shareCopy');
     const shareEmail = document.getElementById('shareEmail');
-    const toastEl = document.getElementById('toast');
-    const typeHint = document.getElementById('typeHint');
 
-    const nameInput = document.getElementById('nameInput');
-    const voterCountInput = document.getElementById('voterCountInput');
-    const phoneInput = document.getElementById('phoneNumberInput');
-    const consentInline = document.getElementById('consentInline');
-    const signatureInputMain = document.getElementById('signatureInputMain');
-    const submitBtn = document.getElementById('submitBtn');
+    const CITY_CONFIG = {
+      homestead: { name:'Homestead', file:'./homestead_boundary.geojson' },
+      floridacity: { name:'Florida City', file:'./floridacity_boundary.geojson' }
+    };
 
-    function toast(msg){ toastEl.textContent = msg; toastEl.style.display='block'; setTimeout(()=> toastEl.style.display='none', 2200); }
-    function toLatLng(path){ return path.map(([lng, lat]) => ({ lat, lng })); }
-
-    // ---------- Phone auto-format ----------
-    phoneInput.addEventListener('input', (event) => {
-      const input = event.target;
-      let v = input.value.replace(/\D/g, "").slice(0, 10);
-      if (v.length > 6) v = `(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6)}`;
-      else if (v.length > 3) v = `(${v.slice(0,3)}) ${v.slice(3)}`;
-      input.value = v;
-    });
-
-    // ---------- Geometry helpers ----------
-    function repairPolygon(feature) {
-      try {
-        const unk = turf.unkinkPolygon(feature);
-        if (unk?.features?.length) {
-          if (unk.features.length === 1) return unk.features[0];
-          return { type: "Feature", properties: {}, geometry: { type: "MultiPolygon", coordinates: unk.features.map(f => f.geometry.coordinates) } };
-        }
-      } catch(e) {}
-      try { return turf.buffer(feature, 0, { units: "meters" }); } catch(e2) {}
+    async function loadBoundary(city){
+      const cfg = CITY_CONFIG[city];
+      const res = await fetch(cfg.file);
+      const raw = await res.json();
+      let feature = raw.type==='FeatureCollection'? raw.features[0] : raw;
       return feature;
     }
 
-    async function loadCityGeoJSON(cityId){
-      const cfg = CITY_CONFIG[cityId];
-      if (!cfg) throw new Error('Unknown city');
-      if (cityCache[cityId]) return cityCache[cityId];
-
-      const res = await fetch(cfg.file, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Failed to load ${cfg.file}`);
-      const raw = await res.json();
-
-      let feature;
-      if (raw.type === "FeatureCollection") feature = raw.features[0];
-      else if (raw.type === "Feature") feature = raw;
-      else feature = { type: "Feature", properties: {}, geometry: raw.geometry || raw };
-
-      const repaired = repairPolygon(feature);
-      cityCache[cityId] = repaired;
-      return repaired;
-    }
-
-    function drawPolygon(cityId){
-      if (polygons[cityId]) { polygons[cityId].setMap(null); delete polygons[cityId]; }
-      const feature = cityCache[cityId]; if (!feature) return;
-      const g = feature.geometry; const cfg = CITY_CONFIG[cityId];
-
-      const add = (coords) => {
-        const latlngRings = coords.map(r => toLatLng(r));
-        const poly = new google.maps.Polygon({
-          paths: latlngRings, strokeColor: cfg.style.stroke, strokeOpacity: 1, strokeWeight: 2,
-          fillColor: cfg.style.fill, fillOpacity: 0.18
-        });
-        poly.setMap(map);
-        polygons[cityId] = poly;
-      };
-      if (g.type === "Polygon") add(g.coordinates);
-      else if (g.type === "MultiPolygon") g.coordinates.forEach(add);
-    }
-
-    function fitBoundsToFeature(feature){
-      const bounds = new google.maps.LatLngBounds();
-      const g = feature.geometry;
-      const add = (coords) => { toLatLng(coords[0]).forEach(pt => bounds.extend(pt)); };
-      if (g.type === "Polygon") add(g.coordinates);
-      else if (g.type === "MultiPolygon") g.coordinates.forEach(add);
-      if (!bounds.isEmpty()) map.fitBounds(bounds);
-    }
-
-    function pointInFeature(latLng, feature){
+    function pointInPolygon(latLng, feature){
       const pt = turf.point([latLng.lng(), latLng.lat()]);
       const g = feature.geometry;
-      return g.type === "Polygon"
-        ? turf.booleanPointInPolygon(pt, turf.polygon(g.coordinates), { ignoreBoundary: false })
-        : g.type === "MultiPolygon"
-          ? turf.booleanPointInPolygon(pt, turf.multiPolygon(g.coordinates), { ignoreBoundary: false })
-          : false;
+      if(g.type==='Polygon') return turf.booleanPointInPolygon(pt, turf.polygon(g.coordinates));
+      if(g.type==='MultiPolygon') return turf.booleanPointInPolygon(pt, turf.multiPolygon(g.coordinates));
+      return false;
     }
 
     function showResult(isInside, cityName){
-      resultEl.style.display = 'block';
-      resultEl.classList.remove('outside');
-      if (isInside) {
-        resultEl.textContent = `Address is inside ${cityName}.`;
-      } else {
-        resultEl.classList.add('outside');
-        resultEl.textContent = `Address is not within ${cityName}.`;
-      }
+      resultEl.style.display='block';
+      resultEl.classList.toggle('outside', !isInside);
+      resultEl.textContent = isInside? `✔ Address is inside ${cityName}` : `❌ Address is not within ${cityName}`;
     }
 
-    async function renderForCity(cityId, {keepCenter=false}={}){
-      currentCity = cityId;
-      localStorage.setItem('lastCity', cityId);
-      const feature = await loadCityGeoJSON(cityId);
-      boundaryGeoJSON = feature;
-      drawPolygon(cityId);
-
-      // Clear the other city's polygon if present
-      const otherId = cityId === 'homestead' ? 'floridacity' : 'homestead';
-      if (polygons[otherId]) { polygons[otherId].setMap(null); delete polygons[otherId]; }
-
-      if(!keepCenter) fitBoundsToFeature(feature);
-    }
-
-    // ---------- Result handling ----------
-    function displayResults(latLng){
-      if (!boundaryGeoJSON) { alert('Boundary not loaded.'); return; }
-      const thisCity = currentCity;
-      const otherCity = currentCity === 'homestead' ? 'floridacity' : 'homestead';
-      const inCurrent = pointInFeature(latLng, boundaryGeoJSON);
-
-      (async ()=>{
-        const otherFeat = await loadCityGeoJSON(otherCity);
-        const inOther = pointInFeature(latLng, otherFeat);
-
-        if (!inCurrent && inOther){
-          // Auto-switch to the city that actually contains the point
-          citySelect.value = otherCity;
-          await renderForCity(otherCity, { keepCenter: true });
-          showResult(true, CITY_CONFIG[otherCity].name);
-          toast(`Switched to ${CITY_CONFIG[otherCity].name} based on the address.`);
-        } else {
-          showResult(inCurrent, CITY_CONFIG[thisCity].name);
-        }
-      })();
-
-      if (!marker) marker = new google.maps.Marker({ position: latLng, map, title: 'Location Checked' });
-      else marker.setPosition(latLng);
-      map.setCenter(latLng);
-      map.setZoom(15);
-    }
-
-    // ---------- Share / Popup ----------
     function openPopup(){ popup.style.display = 'block'; }
-    function closePopupFn(){ popup.style.display = 'none'; }
-    closePopup.addEventListener('click', closePopupFn);
+    closePopup.addEventListener('click', ()=> popup.style.display='none');
 
     function openShare(){
-      const cityName = CITY_CONFIG[currentCity].name;
+      const cityName = CITY_CONFIG[citySelect.value].name;
       const msg = `Pledge your support if you live in ${cityName}:`;
       const url = location.href.split('#')[0];
-
-      shareWa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg + ' ' + url)}`;
-      shareSms.href = `sms:?&body=${encodeURIComponent(msg + ' ' + url)}`;
-      shareCopy.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(`${msg} ${url}`); toast('Link copied'); };
-      shareEmail.href = `mailto:?subject=${encodeURIComponent('Pledge for ' + cityName)}&body=${encodeURIComponent(msg + ' ' + url)}`;
-
-      openPopup();
+      shareEmail.href = `mailto:?subject=Pledge%20for%20${cityName}&body=${encodeURIComponent(msg + ' ' + url)}`;
+      popup.style.display='block';
     }
 
-    // ---------- Form validation ----------
-    function validateForm(){
-      let ok = true;
-      [nameInput, voterCountInput, phoneInput, signatureInputMain].forEach(el => el.classList.remove('error'));
-
-      if (!nameInput.value.trim()) { nameInput.classList.add('error'); ok = false; }
-      const count = parseInt(voterCountInput.value, 10);
-      if (isNaN(count) || count <= 0) { voterCountInput.classList.add('error'); ok = false; }
-
-      const digits = phoneInput.value.replace(/\D/g, "");
-      if (phoneInput.value.trim() && digits.length !== 10) { phoneInput.classList.add('error'); alert("Please enter a valid 10-digit phone number or leave it blank."); ok = false; }
-
-      if (!signatureInputMain.value.trim()) { signatureInputMain.classList.add('error'); ok = false; }
-      return ok;
-    }
-
-    submitBtn.addEventListener('click', ()=>{
-      if (!validateForm()) return;
+    document.getElementById('submitBtn').addEventListener('click', ()=>{
       openShare();
     });
 
-    // ---------- Google Maps init ----------
     async function initMap(){
-      citySelect.value = currentCity;
-
       map = new google.maps.Map(document.getElementById('map-container'), {
-        center: CITY_CONFIG[currentCity].center, zoom: 13, mapTypeControl: false, streetViewControl: false
+        center:{lat:25.4687,lng:-80.4776},zoom:13,mapTypeControl:false,streetViewControl:false
       });
-
-      await renderForCity(currentCity);
-
-      autocomplete = new google.maps.places.Autocomplete(addressInput, { types: ['address'], componentRestrictions: { country: 'us' } });
+      autocomplete = new google.maps.places.Autocomplete(addressInput, { types: ['address'], componentRestrictions:{ country:'us' } });
       geocoder = new google.maps.Geocoder();
 
-      autocomplete.addListener('place_changed', ()=>{
+      // load initial boundary
+      boundaryGeoJSON = await loadBoundary(citySelect.value);
+
+      autocomplete.addListener('place_changed', async ()=>{
         const place = autocomplete.getPlace();
-        if (!place?.geometry){
-          resultEl.style.display='block';
-          resultEl.classList.add('outside');
-          resultEl.textContent = 'No details available for that address.';
-          return;
+        if(place?.geometry){
+          if (!marker) marker = new google.maps.Marker({ position: place.geometry.location, map });
+          else marker.setPosition(place.geometry.location);
+          map.setCenter(place.geometry.location);
+          map.setZoom(15);
+          boundaryGeoJSON = await loadBoundary(citySelect.value);
+          const inside = pointInPolygon(place.geometry.location, boundaryGeoJSON);
+          showResult(inside, CITY_CONFIG[citySelect.value].name);
         }
-        displayResults(place.geometry.location);
       });
 
-      // Gentle hint if user types but doesn't select
-      let typingTimer;
-      addressInput.addEventListener('input', ()=>{
-        clearTimeout(typingTimer);
-        typeHint.textContent = '';
-        typingTimer = setTimeout(()=>{ typeHint.textContent = 'Please pick your address from the suggestions to ensure accuracy.'; }, 900);
-      });
-
-      // Enter-to-geocode fallback
-      addressInput.addEventListener('keydown', (e)=>{
-        if (e.key === 'Enter') {
+      addressInput.addEventListener('keydown', async (e)=>{
+        if(e.key==='Enter'){
           const place = autocomplete.getPlace();
-          if (place?.geometry) {
-            displayResults(place.geometry.location);
-          } else if (addressInput.value.trim()) {
-            geocoder.geocode({ address: addressInput.value.trim(), componentRestrictions: { country: 'US' } }, (results, status) => {
-              if (status === 'OK' && results[0]) {
-                displayResults(results[0].geometry.location);
+          if(place?.geometry){
+            if (!marker) marker = new google.maps.Marker({ position: place.geometry.location, map });
+            else marker.setPosition(place.geometry.location);
+            map.setCenter(place.geometry.location);
+            map.setZoom(15);
+            boundaryGeoJSON = await loadBoundary(citySelect.value);
+            const inside = pointInPolygon(place.geometry.location, boundaryGeoJSON);
+            showResult(inside, CITY_CONFIG[citySelect.value].name);
+          } else if(addressInput.value.trim()){
+            geocoder.geocode({ address: addressInput.value.trim(), componentRestrictions:{ country:'US' } }, async (results, status)=>{
+              if(status==='OK' && results[0]){
+                if (!marker) marker = new google.maps.Marker({ position: results[0].geometry.location, map });
+                else marker.setPosition(results[0].geometry.location);
+                map.setCenter(results[0].geometry.location);
+                map.setZoom(15);
+                boundaryGeoJSON = await loadBoundary(citySelect.value);
+                const inside = pointInPolygon(results[0].geometry.location, boundaryGeoJSON);
+                showResult(inside, CITY_CONFIG[citySelect.value].name);
               } else {
                 resultEl.style.display='block';
                 resultEl.classList.add('outside');
@@ -406,18 +242,17 @@
         }
       });
 
-      // Manual city change clears previous result
       citySelect.addEventListener('change', async ()=>{
-        await renderForCity(citySelect.value);
-        resultEl.style.display = 'none';
+        boundaryGeoJSON = await loadBoundary(citySelect.value);
+        resultEl.style.display='none';
       });
     }
   </script>
-
-  <!-- Google Maps API (put your key below) -->
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap"></script>
 </body>
 </html>
+
+
 
 
 
