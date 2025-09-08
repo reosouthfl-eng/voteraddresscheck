@@ -1,65 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Municipality Address Check</title>
 
+  <link rel="preconnect" href="https://maps.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://maps.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap" rel="stylesheet" />
 
   <style>
+    :root{ --ok:#15803d; --ok-bg:#ecfdf5; --no:#991b1b; --no-bg:#fef2f2; --muted:#6b7280; }
     body { font-family: 'Lato', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; background-color: #f4f4f9; }
-    .header-wrapper { display: flex; justify-content: space-between; align-items: center; width: 90%; max-width: 400px; margin: 10px auto; padding: 10px 0; }
-    #hamburgerMenu { background: none; border: none; font-size: 24px; cursor: pointer; color: black; }
-    #menuDropdown { display: none; position: absolute; background: #f9f9f9; border-radius: 10px; padding: 8px; box-shadow: 0 4px 8px rgba(0,0,0,.2); min-width: 230px; top: 60px; right: 5%; z-index: 1000; }
-    #menuDropdown ul { list-style: none; margin: 0; padding: 0; }
-    #menuDropdown li { border-bottom: 1px solid black; }
-    #menuDropdown li a { display: block; padding: 12px; color: black; text-decoration: none; border-radius: 5px; }
-    #menuDropdown li a:hover { background: #ddd; }
-    @media (max-width: 600px) { .header-wrapper { width: 95%; padding: 5px 0; } #hamburgerMenu { font-size: 20px; } #menuDropdown { right: 5%; } }
-
-    h1 { font-size: 14px; font-weight: bold; text-align: left; width: 90%; max-width: 400px; margin: 10px auto; }
-    .row { width: 90%; max-width: 400px; margin: 10px auto; display: grid; grid-template-columns: 1fr; gap: 8px; }
+    h1 { font-size: 14px; font-weight: bold; text-align: left; width: 92%; max-width: 420px; margin: 6px auto; }
+    .row { width: 92%; max-width: 420px; margin: 8px auto; display: grid; grid-template-columns: 1fr; gap: 8px; }
     .row label { font-size: 14px; font-weight: bold; }
-    select, .row input { width: 100%; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 5px; }
+    select, .row input { width: 100%; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; }
     .row input:focus, select:focus { outline: none; border: 1px solid #0073e6; }
     .row input.error { border-color: #d93025; }
+    .map-container { width: 92%; max-width: 420px; height: 420px; margin: 10px auto; border-radius: 12px; overflow:hidden; background:#e5e7eb; }
+    #result { margin-top: 10px; font-size: 14px; font-weight: bold; text-align: left; line-height: 1.6; padding: 10px; width: 92%; max-width: 420px; display: none; border-radius: 10px; margin: 10px auto; background: var(--ok-bg); color: var(--ok); }
+    #result.outside { background: var(--no-bg); color: var(--no); }
+    .button-container { width: 92%; max-width: 420px; margin: 12px auto; text-align: center; }
+    .button { width: 100%; padding: 12px 20px; font-size: 14px; background-color: #22c55e; color: white; border: none; border-radius: 10px; cursor: pointer; text-align: center; }
 
-    .map-container { width: 90%; max-width: 400px; height: 400px; margin: 20px auto; }
-    #result { margin-top: 10px; font-size: 14px; font-weight: bold; text-align: left; line-height: 1.6; padding: 10px; width: 90%; max-width: 400px; display: none; border-radius: 8px; margin: 20px auto; background: #ecfdf5; color: #065f46; }
-    #result.outside { background: #fef2f2; color: #991b1b; }
+    /* Popup */
+    .popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid #ccc; border-radius: 12px; text-align: left; width: 92%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.18); z-index: 1300; }
+    .sharebar { display:flex; gap:8px; margin-top:10px; }
+    .sharebar a { flex:1; text-align:center; text-decoration:none; color:#fff; padding:10px; border-radius:10px; font-size:13px; }
+    .wa{background:#25D366} .sms{background:#111827} .copy{background:#6b7280} .email{background:#2563eb}
 
-    .button-container { width: 90%; max-width: 400px; margin: 20px auto; text-align: center; }
-    .button-container button { width: 100%; padding: 10px 20px; font-size: 14px; background-color: blue; color: white; border: none; border-radius: 5px; cursor: pointer; text-align: center; }
-    .button-container button.green { background-color: #28a745; }
+    /* Header / Hamburger */
+    .header-wrapper { display:flex; align-items:center; justify-content:space-between; width:92%; max-width:420px; margin:8px auto 0; }
+    #hamburgerMenu { background:none; border:none; font-size:24px; cursor:pointer; color:#111; }
+    #menuDropdown { display:none; position:absolute; right:4%; top:48px; background:#fff; border-radius:10px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,.15); min-width:230px; z-index:1000; }
+    #menuDropdown ul { list-style:none; margin:0; padding:0; }
+    #menuDropdown li { border-bottom:1px solid #e5e7eb; }
+    #menuDropdown li:last-child { border-bottom:0; }
+    #menuDropdown a { display:block; padding:10px 12px; color:#111; text-decoration:none; border-radius:6px; }
+    #menuDropdown a:hover { background:#f3f4f6; }
 
-    .popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid #ccc; border-radius: 10px; text-align: left; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,.1); z-index: 1000; }
-    input[type="checkbox"]#consent { opacity: 1!important; display: inline-block!important; width: 20px!important; height: 20px!important; background-color: #fff!important; border: 2px solid #007bff!important; cursor: pointer!important; visibility: visible!important; z-index: 1000!important; }
-
-    @media (max-width: 600px) { .row, .button-container, .map-container, #result { width: 95%; } }
+    /* Toast */
+    .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #111827; color: white; padding: 10px 14px; border-radius: 999px; font-size: 13px; display:none; z-index:1500; }
+    .sm { font-size: 12px; color: var(--muted); }
   </style>
 
-  <!-- Google Translate -->
-  <script>
-    function googleTranslateElementInit() {
-      new google.translate.TranslateElement(
-        { pageLanguage: 'en', includedLanguages: 'es,ht', layout: google.translate.TranslateElement.InlineLayout.SIMPLE },
-        'google_translate_element'
-      );
-    }
-  </script>
-  <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
-  <!-- Turf.js -->
+  <!-- Turf.js for point-in-polygon -->
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 </head>
 <body>
-
+  <!-- Header with hamburger -->
   <div class="header-wrapper">
-    <div id="google_translate_element"></div>
-    <button id="hamburgerMenu">☰</button>
+    <div style="height:24px;"></div>
+    <button id="hamburgerMenu" aria-label="Open menu">☰</button>
   </div>
-
-  <div id="menuDropdown">
+  <div id="menuDropdown" role="menu" aria-hidden="true">
     <ul>
       <li><a href="https://registertovoteflorida.gov/home" target="_blank">✔ Check Voter Status</a></li>
       <li><a href="https://www.vote.org/register-to-vote/" target="_blank">📝 Register to Vote</a></li>
@@ -68,25 +65,23 @@
     </ul>
   </div>
 
-  <h1 id="pageTitle">Check if Your Address is Within the Municipality of Homestead</h1>
+  <h1 id="pageTitle">Check if Your Address is Within the Municipality</h1>
 
-  <!-- NEW: City selector -->
   <div class="row">
     <label for="citySelect">Select City:</label>
     <select id="citySelect" aria-label="Select municipality">
       <option value="homestead" selected>Homestead</option>
       <option value="floridacity">Florida City</option>
     </select>
+    <input type="text" id="addressInput" placeholder="Enter address here" aria-label="Address" />
+    <span class="sm" id="typeHint" aria-live="polite"></span>
   </div>
 
-  <div class="row">
-    <label for="addressInput">Enter your address:</label>
-    <input type="text" id="addressInput" placeholder="Enter address here" />
+  <div class="map-container">
+    <div id="map-container" style="width:100%;height:100%"></div>
   </div>
 
-  <div id="result"></div>
-
-  <div id="map-container" class="map-container"></div>
+  <div id="result" aria-live="polite"></div>
 
   <div class="row">
     <label for="nameInput">Enter your name:</label>
@@ -97,67 +92,100 @@
     <input type="number" id="voterCountInput" placeholder="Number of Voters" min="1" />
   </div>
   <div class="row">
-    <label for="phoneNumberInput">Enter your phone number:</label>
-    <input type="tel" id="phoneNumberInput" placeholder="(123) 456-7890" />
+    <label for="phoneNumberInput">Enter your phone number (optional):</label>
+    <input type="tel" id="phoneNumberInput" placeholder="(123) 456-7890" inputmode="tel" />
   </div>
   <div class="row">
-    <label for="referralInput">Name of person who referred you:</label>
-    <input type="text" id="referralInput" placeholder="Name of person who referred you" />
+    <!-- Consent left-aligned with label -->
+    <label for="consentInline" style="display:flex; align-items:center; gap:8px; font-weight:normal;">
+      <input type="checkbox" id="consentInline" />
+      I consent to having my name included in campaign materials
+    </label>
+  </div>
+  <div class="row">
+    <label for="signatureInputMain">Your signature:</label>
+    <input type="text" id="signatureInputMain" placeholder="Type your full name here" />
   </div>
 
   <div class="button-container">
-    <button class="green" onclick="validateAndSubmit()">Submit</button>
+    <button id="submitBtn" class="button">Pledge my support</button>
   </div>
 
-  <!-- Popup -->
-  <div id="thankYouPopup" class="popup">
+  <!-- Success Popup -->
+  <div id="thankYouPopup" class="popup" role="dialog" aria-modal="true">
     <h2>Thank You for Your Support!</h2>
-    <p>Your commitment makes a difference! By pledging your support, you're standing with Julio Guzman and helping shape the future of our city.</p>
-    <h3>Make Your Voice Count! Pledge Your Support Today</h3>
-    <p>Check the box below and sign to officially pledge your support for Julio Guzman’s campaign.</p>
-    <div class="preference">
-      <label for="consent"><input type="checkbox" name="consent" id="consent" /> I consent to having my name included in campaign materials</label>
+    <p>Your commitment makes a difference! By pledging your support, you're helping shape the future of our community.</p>
+    <h3 style="margin:10px 0 6px;">Next steps</h3>
+    <ol style="padding-left:18px; margin:6px 0;">
+      <li>Renew/request your Vote-by-Mail ballot.</li>
+      <li>Invite 2 friends who live in your city to pledge.</li>
+    </ol>
+    <div class="sharebar">
+      <a href="#" class="wa" id="shareWa">WhatsApp</a>
+      <a href="#" class="sms" id="shareSms">SMS</a>
+      <a href="#" class="copy" id="shareCopy">Copy link</a>
+      <a href="#" class="email" id="shareEmail">Email</a>
     </div>
-    <label for="signatureInput">Your Signature:</label>
-    <input type="text" id="signatureInput" name="signature" placeholder="Type your full name here" />
-    <div class="button-container">
-      <button id="submitButton" class="green" onclick="handleConfirmation()">Submit</button>
+    <div style="margin-top:12px;display:flex;gap:8px;">
+      <button class="button" id="closePopup">Close</button>
     </div>
   </div>
+
+  <div class="toast" id="toast"></div>
 
   <script>
-    // ===== Config for multiple cities =====
+    // ---------- Hamburger menu ----------
+    (function(){
+      const btn = document.getElementById('hamburgerMenu');
+      const dd = document.getElementById('menuDropdown');
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const open = dd.style.display === 'block';
+        dd.style.display = open ? 'none' : 'block';
+        dd.setAttribute('aria-hidden', open ? 'true' : 'false');
+      });
+      document.addEventListener('click', (e)=>{
+        if (!dd.contains(e.target) && e.target !== btn){ dd.style.display='none'; dd.setAttribute('aria-hidden','true'); }
+      });
+    })();
+
+    // ---------- City config (files must sit next to this HTML) ----------
     const CITY_CONFIG = {
-      homestead: {
-        name: "Homestead",
-        file: "./homestead_boundary.geojson",
-        center: { lat: 25.4687, lng: -80.4776 }
-      },
-      floridacity: {
-        name: "Florida City",
-        file: "./floridacity_boundary.geojson",
-        center: { lat: 25.4477, lng: -80.4809 }
-      }
+      homestead:   { id: 'homestead',   name: 'Homestead',    file: './homestead_boundary.geojson',   center: { lat: 25.4687, lng: -80.4776 }, style: { stroke: '#ef4444', fill: '#ef4444' } },
+      floridacity: { id: 'floridacity', name: 'Florida City', file: './floridacity_boundary.geojson', center: { lat: 25.4477, lng: -80.4809 }, style: { stroke: '#0ea5e9', fill: '#0ea5e9' } }
     };
 
-    // ===== Menu toggle =====
-    document.addEventListener("DOMContentLoaded", () => {
-      const hamburgerMenu = document.getElementById("hamburgerMenu");
-      const menuDropdown = document.getElementById("menuDropdown");
-      hamburgerMenu.addEventListener("click", (e) => {
-        e.stopPropagation();
-        menuDropdown.style.display = menuDropdown.style.display === "block" ? "none" : "block";
-      });
-      document.addEventListener("click", (e) => {
-        if (!menuDropdown.contains(e.target) && !hamburgerMenu.contains(e.target)) {
-          menuDropdown.style.display = "none";
-        }
-      });
-    });
+    // ---------- Elements ----------
+    let map, autocomplete, marker, geocoder;
+    let currentCity = localStorage.getItem('lastCity') || 'homestead';
+    let boundaryGeoJSON = null;
+    const cityCache = {};
+    const polygons = {};
 
-    // ===== Phone formatter =====
-    const phoneNumberInput = document.getElementById("phoneNumberInput");
-    phoneNumberInput.addEventListener("input", (event) => {
+    const citySelect = document.getElementById('citySelect');
+    const addressInput = document.getElementById('addressInput');
+    const resultEl = document.getElementById('result');
+    const popup = document.getElementById('thankYouPopup');
+    const closePopup = document.getElementById('closePopup');
+    const shareWa = document.getElementById('shareWa');
+    const shareSms = document.getElementById('shareSms');
+    const shareCopy = document.getElementById('shareCopy');
+    const shareEmail = document.getElementById('shareEmail');
+    const toastEl = document.getElementById('toast');
+    const typeHint = document.getElementById('typeHint');
+
+    const nameInput = document.getElementById('nameInput');
+    const voterCountInput = document.getElementById('voterCountInput');
+    const phoneInput = document.getElementById('phoneNumberInput');
+    const consentInline = document.getElementById('consentInline');
+    const signatureInputMain = document.getElementById('signatureInputMain');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function toast(msg){ toastEl.textContent = msg; toastEl.style.display='block'; setTimeout(()=> toastEl.style.display='none', 2200); }
+    function toLatLng(path){ return path.map(([lng, lat]) => ({ lat, lng })); }
+
+    // ---------- Phone auto-format ----------
+    phoneInput.addEventListener('input', (event) => {
       const input = event.target;
       let v = input.value.replace(/\D/g, "").slice(0, 10);
       if (v.length > 6) v = `(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6)}`;
@@ -165,42 +193,7 @@
       input.value = v;
     });
 
-    // ===== Multi-city boundary loader =====
-    let map, autocomplete, marker, boundaryPolygon, boundaryBounds, boundaryGeoJSON = null;
-    const cityCache = {}; // cache loaded features keyed by city id
-    const citySelect = document.getElementById("citySelect");
-    const pageTitle = document.getElementById("pageTitle");
-
-    function toLatLng(path) { return path.map(([lng, lat]) => ({ lat, lng })); }
-
-    function clearPolygons() { if (boundaryPolygon) boundaryPolygon.setMap(null); boundaryPolygon = null; }
-
-    function drawGeoJSON(geojson) {
-      clearPolygons();
-      boundaryBounds = new google.maps.LatLngBounds();
-
-      const g = geojson.geometry;
-      const add = (coords) => {
-        const latlngRings = coords.map(r => toLatLng(r));
-        boundaryPolygon = new google.maps.Polygon({
-          paths: latlngRings,
-          strokeColor: "#ef4444", strokeOpacity: 1, strokeWeight: 2,
-          fillColor: "#ef4444", fillOpacity: 0.18
-        });
-        boundaryPolygon.setMap(map);
-        // extend bounds with outer ring
-        latlngRings[0].forEach(pt => boundaryBounds.extend(pt));
-      };
-
-      if (g.type === "Polygon") add(g.coordinates);
-      else if (g.type === "MultiPolygon") g.coordinates.forEach(add);
-
-      if (!boundaryBounds.isEmpty()) {
-        map.fitBounds(boundaryBounds);
-        if (autocomplete) autocomplete.setBounds(boundaryBounds);
-      }
-    }
-
+    // ---------- Geometry helpers ----------
     function repairPolygon(feature) {
       try {
         const unk = turf.unkinkPolygon(feature);
@@ -213,151 +206,220 @@
       return feature;
     }
 
-    async function loadCityGeoJSON(cityId) {
+    async function loadCityGeoJSON(cityId){
       const cfg = CITY_CONFIG[cityId];
-      if (!cfg) throw new Error("Unknown city id");
-      if (cityCache[cityId]) {
-        boundaryGeoJSON = cityCache[cityId];
-        drawGeoJSON(boundaryGeoJSON);
-        return;
-      }
-      const res = await fetch(cfg.file, { cache: "no-store" });
+      if (!cfg) throw new Error('Unknown city');
+      if (cityCache[cityId]) return cityCache[cityId];
+
+      const res = await fetch(cfg.file, { cache: 'no-store' });
       if (!res.ok) throw new Error(`Failed to load ${cfg.file}`);
       const raw = await res.json();
+
       let feature;
       if (raw.type === "FeatureCollection") feature = raw.features[0];
       else if (raw.type === "Feature") feature = raw;
       else feature = { type: "Feature", properties: {}, geometry: raw.geometry || raw };
+
       const repaired = repairPolygon(feature);
       cityCache[cityId] = repaired;
-      boundaryGeoJSON = repaired;
-      drawGeoJSON(boundaryGeoJSON);
+      return repaired;
     }
 
-    function updatePageForCity(cityId) {
-      const cfg = CITY_CONFIG[cityId];
-      pageTitle.textContent = `Check if Your Address is Within the Municipality of ${cfg.name}`;
+    function drawPolygon(cityId){
+      if (polygons[cityId]) { polygons[cityId].setMap(null); delete polygons[cityId]; }
+      const feature = cityCache[cityId]; if (!feature) return;
+      const g = feature.geometry; const cfg = CITY_CONFIG[cityId];
+
+      const add = (coords) => {
+        const latlngRings = coords.map(r => toLatLng(r));
+        const poly = new google.maps.Polygon({
+          paths: latlngRings, strokeColor: cfg.style.stroke, strokeOpacity: 1, strokeWeight: 2,
+          fillColor: cfg.style.fill, fillOpacity: 0.18
+        });
+        poly.setMap(map);
+        polygons[cityId] = poly;
+      };
+      if (g.type === "Polygon") add(g.coordinates);
+      else if (g.type === "MultiPolygon") g.coordinates.forEach(add);
     }
 
-    // ===== Google Maps init =====
-    async function initMap() {
-      const startCity = citySelect.value || "homestead";
-      const startCfg = CITY_CONFIG[startCity];
-
-      map = new google.maps.Map(document.getElementById("map-container"), {
-        center: startCfg.center, zoom: 13, mapTypeControl: false, streetViewControl: false
-      });
-
-      await loadCityGeoJSON(startCity);
-      updatePageForCity(startCity);
-
-      const input = document.getElementById("addressInput");
-      autocomplete = new google.maps.places.Autocomplete(input, { types: ["address"], componentRestrictions: { country: "us" } });
-      autocomplete.addListener("place_changed", () => {
-        const place = autocomplete.getPlace();
-        if (!place.geometry) { showResult(false, "No details available for that address."); return; }
-        displayResults(place.geometry.location);
-      });
-
-      // City change handler
-      citySelect.addEventListener("change", async () => {
-        const cityId = citySelect.value;
-        updatePageForCity(cityId);
-        await loadCityGeoJSON(cityId);
-        // recenter to city default if no marker placed yet
-        if (!marker) {
-          map.setCenter(CITY_CONFIG[cityId].center);
-          map.setZoom(13);
-        }
-        // clear and hide previous result
-        const el = document.getElementById("result");
-        el.style.display = "none";
-        el.classList.remove("outside");
-      });
+    function fitBoundsToFeature(feature){
+      const bounds = new google.maps.LatLngBounds();
+      const g = feature.geometry;
+      const add = (coords) => { toLatLng(coords[0]).forEach(pt => bounds.extend(pt)); };
+      if (g.type === "Polygon") add(g.coordinates);
+      else if (g.type === "MultiPolygon") g.coordinates.forEach(add);
+      if (!bounds.isEmpty()) map.fitBounds(bounds);
     }
 
-    // ===== Check & display =====
-    function displayResults(latLng) {
-      if (!boundaryGeoJSON) { alert("Boundary not loaded."); return; }
+    function pointInFeature(latLng, feature){
       const pt = turf.point([latLng.lng(), latLng.lat()]);
-      const g = boundaryGeoJSON.geometry;
-      const isInside =
-        g.type === "Polygon"
-          ? turf.booleanPointInPolygon(pt, turf.polygon(g.coordinates), { ignoreBoundary: false })
-          : g.type === "MultiPolygon"
+      const g = feature.geometry;
+      return g.type === "Polygon"
+        ? turf.booleanPointInPolygon(pt, turf.polygon(g.coordinates), { ignoreBoundary: false })
+        : g.type === "MultiPolygon"
           ? turf.booleanPointInPolygon(pt, turf.multiPolygon(g.coordinates), { ignoreBoundary: false })
           : false;
-
-      if (!marker) marker = new google.maps.Marker({ position: latLng, map, title: "Location Checked" });
-      else marker.setPosition(latLng);
-
-      map.setCenter(latLng);
-      map.setZoom(15);
-      showResult(isInside);
     }
 
-    function showResult(isInside, override) {
-      const el = document.getElementById("result");
-      const cityName = CITY_CONFIG[citySelect.value].name;
-      el.style.display = "block";
-      el.classList.remove("outside");
-      if (override) { el.textContent = override; return; }
+    function showResult(isInside, cityName){
+      resultEl.style.display = 'block';
+      resultEl.classList.remove('outside');
       if (isInside) {
-        el.innerHTML = `
-          <ul style="list-style: disc; padding-left: 18px; margin: 0;">
-            <li><strong style="color:#15803d;">✔ Yes! Your address is in the Municipality of ${cityName}.</strong></li>
-            <li>📌 Please answer the questions below the map.</li>
-          </ul>`;
+        resultEl.textContent = `Address is inside ${cityName}.`;
       } else {
-        el.classList.add("outside");
-        el.innerHTML = `
-          <ul style="list-style: disc; padding-left: 18px; margin: 0;">
-            <li><strong style="color:#b91c1c;">❌ No, the address is not within the Municipality of ${cityName}.</strong></li>
-            <li>Think of 2 people you know in ${cityName} and share this campaign with them.</li>
-            <li>📢 <a href="https://yourcampaignlink.com" target="_blank" rel="noopener">Spread the word!</a></li>
-          </ul>`;
+        resultEl.classList.add('outside');
+        resultEl.textContent = `Address is not within ${cityName}.`;
       }
     }
 
-    // ===== Popup & localStorage =====
-    function openPopup(){ document.getElementById("thankYouPopup").style.display = "block"; }
-    function closePopup(){ document.getElementById("thankYouPopup").style.display = "none"; }
-    function submitVoterData() {
-      const userName = document.getElementById("nameInput").value.trim();
-      const voterCount = document.getElementById("voterCountInput").value.trim();
-      const consent = document.getElementById("consent").checked;
-      if (!userName || !voterCount || Number(voterCount) <= 0) { alert("Please enter your name and the number of voters at this address."); return false; }
-      const today = new Date().toISOString().split("T")[0];
-      const store = JSON.parse(localStorage.getItem("voterData") || "{}");
-      store[today] = store[today] || [];
-      store[today].push({ name: userName, count: Number(voterCount), pledged: consent, city: CITY_CONFIG[citySelect.value].name });
-      localStorage.setItem("voterData", JSON.stringify(store));
-      return true;
+    async function renderForCity(cityId, {keepCenter=false}={}){
+      currentCity = cityId;
+      localStorage.setItem('lastCity', cityId);
+      const feature = await loadCityGeoJSON(cityId);
+      boundaryGeoJSON = feature;
+      drawPolygon(cityId);
+
+      // Clear the other city's polygon if present
+      const otherId = cityId === 'homestead' ? 'floridacity' : 'homestead';
+      if (polygons[otherId]) { polygons[otherId].setMap(null); delete polygons[otherId]; }
+
+      if(!keepCenter) fitBoundsToFeature(feature);
     }
-    function handleConfirmation() {
-      if (!submitVoterData()) return;
-      alert("Thank you for pledging your commitment. Remember to request/renew your vote-by-mail ballot on the top right corner of the home page.");
-      closePopup();
+
+    // ---------- Result handling ----------
+    function displayResults(latLng){
+      if (!boundaryGeoJSON) { alert('Boundary not loaded.'); return; }
+      const thisCity = currentCity;
+      const otherCity = currentCity === 'homestead' ? 'floridacity' : 'homestead';
+      const inCurrent = pointInFeature(latLng, boundaryGeoJSON);
+
+      (async ()=>{
+        const otherFeat = await loadCityGeoJSON(otherCity);
+        const inOther = pointInFeature(latLng, otherFeat);
+
+        if (!inCurrent && inOther){
+          // Auto-switch to the city that actually contains the point
+          citySelect.value = otherCity;
+          await renderForCity(otherCity, { keepCenter: true });
+          showResult(true, CITY_CONFIG[otherCity].name);
+          toast(`Switched to ${CITY_CONFIG[otherCity].name} based on the address.`);
+        } else {
+          showResult(inCurrent, CITY_CONFIG[thisCity].name);
+        }
+      })();
+
+      if (!marker) marker = new google.maps.Marker({ position: latLng, map, title: 'Location Checked' });
+      else marker.setPosition(latLng);
+      map.setCenter(latLng);
+      map.setZoom(15);
     }
-    function validateAndSubmit() {
-      const nameInput = document.getElementById("nameInput");
-      const voterCountInput = document.getElementById("voterCountInput");
-      const phoneInput = document.getElementById("phoneNumberInput");
+
+    // ---------- Share / Popup ----------
+    function openPopup(){ popup.style.display = 'block'; }
+    function closePopupFn(){ popup.style.display = 'none'; }
+    closePopup.addEventListener('click', closePopupFn);
+
+    function openShare(){
+      const cityName = CITY_CONFIG[currentCity].name;
+      const msg = `Pledge your support if you live in ${cityName}:`;
+      const url = location.href.split('#')[0];
+
+      shareWa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg + ' ' + url)}`;
+      shareSms.href = `sms:?&body=${encodeURIComponent(msg + ' ' + url)}`;
+      shareCopy.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(`${msg} ${url}`); toast('Link copied'); };
+      shareEmail.href = `mailto:?subject=${encodeURIComponent('Pledge for ' + cityName)}&body=${encodeURIComponent(msg + ' ' + url)}`;
+
+      openPopup();
+    }
+
+    // ---------- Form validation ----------
+    function validateForm(){
       let ok = true;
-      [nameInput, voterCountInput, phoneInput].forEach(el => el.classList.remove("error"));
-      if (!nameInput.value.trim()) { nameInput.classList.add("error"); ok = false; }
+      [nameInput, voterCountInput, phoneInput, signatureInputMain].forEach(el => el.classList.remove('error'));
+
+      if (!nameInput.value.trim()) { nameInput.classList.add('error'); ok = false; }
       const count = parseInt(voterCountInput.value, 10);
-      if (isNaN(count) || count <= 0) { voterCountInput.classList.add("error"); ok = false; }
+      if (isNaN(count) || count <= 0) { voterCountInput.classList.add('error'); ok = false; }
+
       const digits = phoneInput.value.replace(/\D/g, "");
-      if (phoneInput.value.trim() && digits.length !== 10) { phoneInput.classList.add("error"); alert("Please enter a valid 10-digit phone number or leave it blank."); ok = false; }
-      if (!ok) return; openPopup();
+      if (phoneInput.value.trim() && digits.length !== 10) { phoneInput.classList.add('error'); alert("Please enter a valid 10-digit phone number or leave it blank."); ok = false; }
+
+      if (!signatureInputMain.value.trim()) { signatureInputMain.classList.add('error'); ok = false; }
+      return ok;
+    }
+
+    submitBtn.addEventListener('click', ()=>{
+      if (!validateForm()) return;
+      openShare();
+    });
+
+    // ---------- Google Maps init ----------
+    async function initMap(){
+      citySelect.value = currentCity;
+
+      map = new google.maps.Map(document.getElementById('map-container'), {
+        center: CITY_CONFIG[currentCity].center, zoom: 13, mapTypeControl: false, streetViewControl: false
+      });
+
+      await renderForCity(currentCity);
+
+      autocomplete = new google.maps.places.Autocomplete(addressInput, { types: ['address'], componentRestrictions: { country: 'us' } });
+      geocoder = new google.maps.Geocoder();
+
+      autocomplete.addListener('place_changed', ()=>{
+        const place = autocomplete.getPlace();
+        if (!place?.geometry){
+          resultEl.style.display='block';
+          resultEl.classList.add('outside');
+          resultEl.textContent = 'No details available for that address.';
+          return;
+        }
+        displayResults(place.geometry.location);
+      });
+
+      // Gentle hint if user types but doesn't select
+      let typingTimer;
+      addressInput.addEventListener('input', ()=>{
+        clearTimeout(typingTimer);
+        typeHint.textContent = '';
+        typingTimer = setTimeout(()=>{ typeHint.textContent = 'Please pick your address from the suggestions to ensure accuracy.'; }, 900);
+      });
+
+      // Enter-to-geocode fallback
+      addressInput.addEventListener('keydown', (e)=>{
+        if (e.key === 'Enter') {
+          const place = autocomplete.getPlace();
+          if (place?.geometry) {
+            displayResults(place.geometry.location);
+          } else if (addressInput.value.trim()) {
+            geocoder.geocode({ address: addressInput.value.trim(), componentRestrictions: { country: 'US' } }, (results, status) => {
+              if (status === 'OK' && results[0]) {
+                displayResults(results[0].geometry.location);
+              } else {
+                resultEl.style.display='block';
+                resultEl.classList.add('outside');
+                resultEl.textContent = 'Could not geocode that address. Please select from the suggestions.';
+              }
+            });
+          }
+        }
+      });
+
+      // Manual city change clears previous result
+      citySelect.addEventListener('change', async ()=>{
+        await renderForCity(citySelect.value);
+        resultEl.style.display = 'none';
+      });
     }
   </script>
 
-  <!-- Google Maps: keep this LAST; put your key below -->
+  <!-- Google Maps API (put your key below) -->
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap"></script>
 </body>
 </html>
+
+
 
 
 
