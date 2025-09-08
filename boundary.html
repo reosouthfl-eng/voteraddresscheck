@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Homestead Municipality Address Check</title>
+  <title>Municipality Address Check</title>
 
   <link href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap" rel="stylesheet" />
 
@@ -18,20 +18,24 @@
     @media (max-width: 600px) { .header-wrapper { width: 95%; padding: 5px 0; } #hamburgerMenu { font-size: 20px; } #menuDropdown { right: 5%; } }
 
     h1 { font-size: 14px; font-weight: bold; text-align: left; width: 90%; max-width: 400px; margin: 10px auto; }
-    .input-container { width: 90%; max-width: 400px; margin: 10px auto; display: flex; flex-direction: column; align-items: center; }
-    .input-container label { font-size: 14px; font-weight: bold; margin-bottom: 5px; text-align: left; width: 100%; }
-    .input-container input { width: 100%; padding: 10px; margin-bottom: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 5px; }
-    .input-container input:focus { outline: none; border: 1px solid #0073e6; }
-    .input-container input.error { border-color: #d93025; }
+    .row { width: 90%; max-width: 400px; margin: 10px auto; display: grid; grid-template-columns: 1fr; gap: 8px; }
+    .row label { font-size: 14px; font-weight: bold; }
+    select, .row input { width: 100%; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 5px; }
+    .row input:focus, select:focus { outline: none; border: 1px solid #0073e6; }
+    .row input.error { border-color: #d93025; }
+
     .map-container { width: 90%; max-width: 400px; height: 400px; margin: 20px auto; }
     #result { margin-top: 10px; font-size: 14px; font-weight: bold; text-align: left; line-height: 1.6; padding: 10px; width: 90%; max-width: 400px; display: none; border-radius: 8px; margin: 20px auto; background: #ecfdf5; color: #065f46; }
     #result.outside { background: #fef2f2; color: #991b1b; }
+
     .button-container { width: 90%; max-width: 400px; margin: 20px auto; text-align: center; }
     .button-container button { width: 100%; padding: 10px 20px; font-size: 14px; background-color: blue; color: white; border: none; border-radius: 5px; cursor: pointer; text-align: center; }
     .button-container button.green { background-color: #28a745; }
+
     .popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid #ccc; border-radius: 10px; text-align: left; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,.1); z-index: 1000; }
     input[type="checkbox"]#consent { opacity: 1!important; display: inline-block!important; width: 20px!important; height: 20px!important; background-color: #fff!important; border: 2px solid #007bff!important; cursor: pointer!important; visibility: visible!important; z-index: 1000!important; }
-    @media (max-width: 600px) { .input-container, .button-container, .map-container, #result { width: 95%; } }
+
+    @media (max-width: 600px) { .row, .button-container, .map-container, #result { width: 95%; } }
   </style>
 
   <!-- Google Translate -->
@@ -66,7 +70,16 @@
 
   <h1 id="pageTitle">Check if Your Address is Within the Municipality of Homestead</h1>
 
-  <div class="input-container">
+  <!-- NEW: City selector -->
+  <div class="row">
+    <label for="citySelect">Select City:</label>
+    <select id="citySelect" aria-label="Select municipality">
+      <option value="homestead" selected>Homestead</option>
+      <option value="floridacity">Florida City</option>
+    </select>
+  </div>
+
+  <div class="row">
     <label for="addressInput">Enter your address:</label>
     <input type="text" id="addressInput" placeholder="Enter address here" />
   </div>
@@ -75,19 +88,19 @@
 
   <div id="map-container" class="map-container"></div>
 
-  <div class="input-container">
+  <div class="row">
     <label for="nameInput">Enter your name:</label>
     <input type="text" id="nameInput" placeholder="Your Name" />
   </div>
-  <div class="input-container">
+  <div class="row">
     <label for="voterCountInput">How many voters at this address?</label>
     <input type="number" id="voterCountInput" placeholder="Number of Voters" min="1" />
   </div>
-  <div class="input-container">
+  <div class="row">
     <label for="phoneNumberInput">Enter your phone number:</label>
     <input type="tel" id="phoneNumberInput" placeholder="(123) 456-7890" />
   </div>
-  <div class="input-container">
+  <div class="row">
     <label for="referralInput">Name of person who referred you:</label>
     <input type="text" id="referralInput" placeholder="Name of person who referred you" />
   </div>
@@ -99,7 +112,7 @@
   <!-- Popup -->
   <div id="thankYouPopup" class="popup">
     <h2>Thank You for Your Support!</h2>
-    <p>Your commitment makes a difference! By pledging your support, you're standing with Julio Guzman and helping shape the future of Homestead.</p>
+    <p>Your commitment makes a difference! By pledging your support, you're standing with Julio Guzman and helping shape the future of our city.</p>
     <h3>Make Your Voice Count! Pledge Your Support Today</h3>
     <p>Check the box below and sign to officially pledge your support for Julio Guzman’s campaign.</p>
     <div class="preference">
@@ -113,6 +126,20 @@
   </div>
 
   <script>
+    // ===== Config for multiple cities =====
+    const CITY_CONFIG = {
+      homestead: {
+        name: "Homestead",
+        file: "./homestead_boundary.geojson",
+        center: { lat: 25.4687, lng: -80.4776 }
+      },
+      floridacity: {
+        name: "Florida City",
+        file: "./floridacity_boundary.geojson",
+        center: { lat: 25.4477, lng: -80.4809 }
+      }
+    };
+
     // ===== Menu toggle =====
     document.addEventListener("DOMContentLoaded", () => {
       const hamburgerMenu = document.getElementById("hamburgerMenu");
@@ -138,8 +165,11 @@
       input.value = v;
     });
 
-    // ===== Single-city (Homestead) boundary loader =====
+    // ===== Multi-city boundary loader =====
     let map, autocomplete, marker, boundaryPolygon, boundaryBounds, boundaryGeoJSON = null;
+    const cityCache = {}; // cache loaded features keyed by city id
+    const citySelect = document.getElementById("citySelect");
+    const pageTitle = document.getElementById("pageTitle");
 
     function toLatLng(path) { return path.map(([lng, lat]) => ({ lat, lng })); }
 
@@ -183,33 +213,66 @@
       return feature;
     }
 
-    async function loadHomesteadGeoJSON() {
-      const res = await fetch("./homestead_boundary.geojson", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to load homestead_boundary.geojson");
+    async function loadCityGeoJSON(cityId) {
+      const cfg = CITY_CONFIG[cityId];
+      if (!cfg) throw new Error("Unknown city id");
+      if (cityCache[cityId]) {
+        boundaryGeoJSON = cityCache[cityId];
+        drawGeoJSON(boundaryGeoJSON);
+        return;
+      }
+      const res = await fetch(cfg.file, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Failed to load ${cfg.file}`);
       const raw = await res.json();
       let feature;
       if (raw.type === "FeatureCollection") feature = raw.features[0];
       else if (raw.type === "Feature") feature = raw;
       else feature = { type: "Feature", properties: {}, geometry: raw.geometry || raw };
-      boundaryGeoJSON = repairPolygon(feature);
+      const repaired = repairPolygon(feature);
+      cityCache[cityId] = repaired;
+      boundaryGeoJSON = repaired;
       drawGeoJSON(boundaryGeoJSON);
+    }
+
+    function updatePageForCity(cityId) {
+      const cfg = CITY_CONFIG[cityId];
+      pageTitle.textContent = `Check if Your Address is Within the Municipality of ${cfg.name}`;
     }
 
     // ===== Google Maps init =====
     async function initMap() {
+      const startCity = citySelect.value || "homestead";
+      const startCfg = CITY_CONFIG[startCity];
+
       map = new google.maps.Map(document.getElementById("map-container"), {
-        center: { lat: 25.4687, lng: -80.4776 }, zoom: 13, mapTypeControl: false, streetViewControl: false
+        center: startCfg.center, zoom: 13, mapTypeControl: false, streetViewControl: false
       });
 
-      await loadHomesteadGeoJSON();
+      await loadCityGeoJSON(startCity);
+      updatePageForCity(startCity);
 
       const input = document.getElementById("addressInput");
       autocomplete = new google.maps.places.Autocomplete(input, { types: ["address"], componentRestrictions: { country: "us" } });
-
       autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
         if (!place.geometry) { showResult(false, "No details available for that address."); return; }
         displayResults(place.geometry.location);
+      });
+
+      // City change handler
+      citySelect.addEventListener("change", async () => {
+        const cityId = citySelect.value;
+        updatePageForCity(cityId);
+        await loadCityGeoJSON(cityId);
+        // recenter to city default if no marker placed yet
+        if (!marker) {
+          map.setCenter(CITY_CONFIG[cityId].center);
+          map.setZoom(13);
+        }
+        // clear and hide previous result
+        const el = document.getElementById("result");
+        el.style.display = "none";
+        el.classList.remove("outside");
       });
     }
 
@@ -235,21 +298,22 @@
 
     function showResult(isInside, override) {
       const el = document.getElementById("result");
+      const cityName = CITY_CONFIG[citySelect.value].name;
       el.style.display = "block";
       el.classList.remove("outside");
       if (override) { el.textContent = override; return; }
       if (isInside) {
         el.innerHTML = `
           <ul style="list-style: disc; padding-left: 18px; margin: 0;">
-            <li><strong style="color:#15803d;">✔ Yes! Your address is in the Municipality of Homestead.</strong></li>
+            <li><strong style="color:#15803d;">✔ Yes! Your address is in the Municipality of ${cityName}.</strong></li>
             <li>📌 Please answer the questions below the map.</li>
           </ul>`;
       } else {
         el.classList.add("outside");
         el.innerHTML = `
           <ul style="list-style: disc; padding-left: 18px; margin: 0;">
-            <li><strong style="color:#b91c1c;">❌ No, the address is not within the Municipality of Homestead.</strong></li>
-            <li>Think of 2 people you know in Homestead and share this campaign with them.</li>
+            <li><strong style="color:#b91c1c;">❌ No, the address is not within the Municipality of ${cityName}.</strong></li>
+            <li>Think of 2 people you know in ${cityName} and share this campaign with them.</li>
             <li>📢 <a href="https://yourcampaignlink.com" target="_blank" rel="noopener">Spread the word!</a></li>
           </ul>`;
       }
@@ -266,7 +330,7 @@
       const today = new Date().toISOString().split("T")[0];
       const store = JSON.parse(localStorage.getItem("voterData") || "{}");
       store[today] = store[today] || [];
-      store[today].push({ name: userName, count: Number(voterCount), pledged: consent });
+      store[today].push({ name: userName, count: Number(voterCount), pledged: consent, city: CITY_CONFIG[citySelect.value].name });
       localStorage.setItem("voterData", JSON.stringify(store));
       return true;
     }
@@ -294,6 +358,8 @@
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap"></script>
 </body>
 </html>
+
+
 
 
 
