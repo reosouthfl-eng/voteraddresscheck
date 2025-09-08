@@ -1,423 +1,199 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Homestead Municipality Address Check</title>
+  <meta charset="UTF-8" />
+  <title>Homestead Voter Boundary Check</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <link href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap" rel="stylesheet">
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap" rel="stylesheet" />
 
+  <!-- Styles -->
   <style>
-    body {
-      font-family: 'Lato', sans-serif;
-      margin: 0; padding: 0;
-      display: flex; flex-direction: column; align-items: center;
-      background-color: #f4f4f9;
-    }
-    .header-wrapper {
-      display: flex; justify-content: space-between; align-items: center;
-      width: 90%; max-width: 400px; margin: 10px auto; padding: 10px 0;
-    }
-    #hamburgerMenu { background: none; border: none; font-size: 24px; cursor: pointer; color: black; }
-    #menuDropdown {
-      display: none; position: absolute; background: #f9f9f9; border-radius: 10px; padding: 8px;
-      box-shadow: 0 4px 8px rgba(0,0,0,.2); min-width: 230px; top: 60px; right: 5%; z-index: 1000;
-    }
-    #menuDropdown ul { list-style: none; margin: 0; padding: 0; }
-    #menuDropdown li { border-bottom: 1px solid black; }
-    #menuDropdown li a { display: block; padding: 12px; color: black; text-decoration: none; border-radius: 5px; }
-    #menuDropdown li a:hover { background: #ddd; }
-
-    @media (max-width: 600px) {
-      .header-wrapper { width: 95%; padding: 5px 0; }
-      #hamburgerMenu { font-size: 20px; }
-      #menuDropdown { right: 5%; }
-    }
-
-    h1 {
-      font-size: 14px; font-weight: bold; text-align: left;
-      width: 90%; max-width: 400px; margin: 10px auto;
-    }
-    .input-container {
-      width: 90%; max-width: 400px; margin: 10px auto;
-      display: flex; flex-direction: column; align-items: center;
-    }
-    .input-container label {
-      font-size: 14px; font-weight: bold; margin-bottom: 5px; text-align: left; width: 100%;
-    }
-    .input-container input {
-      width: 100%; padding: 10px; margin-bottom: 10px; font-size: 14px;
-      border: 1px solid #ccc; border-radius: 5px;
-    }
-    .input-container input:focus { outline: none; border: 1px solid #0073e6; }
-    .input-container input.error { border-color: #d93025; }
-
-    .map-container { width: 90%; max-width: 400px; height: 400px; margin: 20px auto; }
-    #result {
-      margin-top: 10px; font-size: 14px; font-weight: bold; text-align: left;
-      line-height: 1.6; padding: 10px; width: 90%; max-width: 400px; display: none;
-      border-radius: 8px; margin: 20px auto; background: #ecfdf5; color: #065f46;
-    }
-    #result.outside { background: #fef2f2; color: #991b1b; }
-
-    .button-container { width: 90%; max-width: 400px; margin: 20px auto; text-align: center; }
-    .button-container button {
-      width: 100%; padding: 10px 20px; font-size: 14px; background-color: blue; color: white;
-      border: none; border-radius: 5px; cursor: pointer; text-align: center;
-    }
-    .button-container button.green { background-color: #28a745; }
-
-    .popup {
-      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: white; padding: 20px; border: 1px solid #ccc; border-radius: 10px; text-align: left;
-      width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
-      box-shadow: 0 4px 6px rgba(0,0,0,.1); z-index: 1000;
-    }
-    input[type="checkbox"]#consent {
-      opacity: 1 !important; display: inline-block !important; width: 20px !important; height: 20px !important;
-      background-color: #fff !important; border: 2px solid #007bff !important; cursor: pointer !important;
-      visibility: visible !important; z-index: 1000 !important;
-    }
-
-    @media (max-width: 600px) {
-      .input-container, .button-container, .map-container, #result { width: 95%; }
-    }
+    body{font-family:'Lato',sans-serif;margin:0;background:#f4f4f9;display:flex;flex-direction:column;align-items:center}
+    h1{font-size:18px;margin:1rem auto;text-align:center}
+    .input-container{width:90%;max-width:400px;margin:.5rem auto;display:flex;flex-direction:column}
+    .input-container input{padding:.6rem;border:1px solid #ccc;border-radius:4px}
+    .map-container{width:90%;max-width:400px;height:400px;margin:1rem auto}
+    #result{display:none;width:90%;max-width:400px;margin:1rem auto;padding:.75rem;border-radius:8px;font-weight:700}
+    #result.ok{background:#ecfdf5;color:#065f46}
+    #result.out{background:#fef2f2;color:#991b1b}
+    .button-container{width:90%;max-width:400px;margin:1rem auto;text-align:center}
+    button{width:100%;padding:.75rem;border:none;border-radius:4px;background:#0069d9;color:#fff;font-size:1rem;cursor:pointer}
+    #progressWrapper{width:90%;max-width:400px;margin:1rem auto;background:#ddd;border-radius:4px;overflow:hidden}
+    #progressBar{height:16px;width:0;background:#28a745}
+    #progressText{text-align:center;font-size:14px;margin-top:.25rem}
+    .popup{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:8px;padding:1rem;width:90%;max-width:500px;box-shadow:0 4px 8px rgba(0,0,0,.2)}
   </style>
 
-  <!-- Google Translate -->
-  <script>
-    function googleTranslateElementInit() {
-      new google.translate.TranslateElement(
-        { pageLanguage: 'en', includedLanguages: 'es,ht', layout: google.translate.TranslateElement.InlineLayout.SIMPLE },
-        'google_translate_element'
-      );
-    }
-  </script>
-  <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
-  <!-- Turf.js -->
+  <!-- Turf for polygon math -->
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 </head>
 <body>
-
-  <div class="header-wrapper">
-    <div id="google_translate_element"></div>
-    <button id="hamburgerMenu">☰</button>
-  </div>
-
-  <div id="menuDropdown">
-    <ul>
-      <li><a href="https://registertovoteflorida.gov/home" target="_blank">✔ Check Voter Status</a></li>
-      <li><a href="https://www.vote.org/register-to-vote/" target="_blank">📝 Register to Vote</a></li>
-      <li><a href="https://www.miamidade.gov/global/elections/vote-by-mail.page" target="_blank">📩 Request Your Vote-by-Mail Ballot</a></li>
-      <li><a href="https://lkt.337.myftpupload.com/login" target="_blank">🔑 Login</a></li>
-    </ul>
-  </div>
-
-  <h1>Check if Your Address is Within the Municipality of Homestead</h1>
+  <h1>Check if Your Address is Inside Homestead</h1>
 
   <div class="input-container">
-    <label for="addressInput">Enter your address:</label>
-    <input type="text" id="addressInput" placeholder="Enter address here">
+    <label for="address">Address</label>
+    <input id="address" type="text" placeholder="123 Main St" />
   </div>
 
   <div id="result"></div>
+  <div id="map" class="map-container"></div>
 
-  <div id="map-container" class="map-container"></div>
-
   <div class="input-container">
-    <label for="nameInput">Enter your name:</label>
-    <input type="text" id="nameInput" placeholder="Your Name">
+    <label for="name">Your Name</label>
+    <input id="name" type="text" />
   </div>
   <div class="input-container">
-    <label for="voterCountInput">How many voters at this address?</label>
-    <input type="number" id="voterCountInput" placeholder="Number of Voters" min="1">
+    <label for="count">How Many Voters at This Address?</label>
+    <input id="count" type="number" min="1" />
   </div>
   <div class="input-container">
-    <label for="phoneNumberInput">Enter your phone number:</label>
-    <input type="tel" id="phoneNumberInput" placeholder="(123) 456-7890">
-  </div>
-  <div class="input-container">
-    <label for="referralInput">Name of person who referred you:</label>
-    <input type="text" id="referralInput" placeholder="Name of person who referred you">
+    <label for="phone">Phone (optional)</label>
+    <input id="phone" type="tel" />
   </div>
 
   <div class="button-container">
-    <button class="green" onclick="validateAndSubmit()">Submit</button>
+    <button id="pledgeBtn">Pledge Support</button>
   </div>
 
-  <!-- Popup -->
-  <div id="thankYouPopup" class="popup">
-    <h2>Thank You for Your Support!</h2>
-    <p>Your commitment makes a difference! By pledging your support, you're standing with Julio Guzman and helping shape the future of Homestead.</p>
-    <h3>Make Your Voice Count! Pledge Your Support Today</h3>
-    <p>Check the box below and sign to officially pledge your support for Julio Guzman’s campaign.</p>
-    <div class="preference">
-      <label for="consent">
-        <input type="checkbox" name="consent" id="consent">
-        I consent to having my name included in campaign materials
-      </label>
-    </div>
-    <label for="signatureInput">Your Signature:</label>
-    <input type="text" id="signatureInput" name="signature" placeholder="Type your full name here">
+  <!-- Candidate progress bar -->
+  <div id="progressWrapper">
+    <div id="progressBar"></div>
+  </div>
+  <div id="progressText">Loading progress…</div>
+
+  <!-- Confirmation popup -->
+  <div id="thankYou" class="popup">
+    <h2>Thank You!</h2>
+    <p>Your pledge has been recorded.</p>
     <div class="button-container">
-      <button id="submitButton" class="green" onclick="handleConfirmation()">Submit</button>
+      <button onclick="closePopup()">Close</button>
     </div>
   </div>
 
   <script>
-    // ===== Menu toggle =====
-    document.addEventListener("DOMContentLoaded", () => {
-      const hamburgerMenu = document.getElementById("hamburgerMenu");
-      const menuDropdown = document.getElementById("menuDropdown");
-      hamburgerMenu.addEventListener("click", (e) => {
-        e.stopPropagation();
-        menuDropdown.style.display = menuDropdown.style.display === "block" ? "none" : "block";
+    let map, marker, autocomplete, boundary;
+
+    async function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 25.47, lng: -80.48 },
+        zoom: 12,
       });
-      document.addEventListener("click", (e) => {
-        if (!menuDropdown.contains(e.target) && !hamburgerMenu.contains(e.target)) {
-          menuDropdown.style.display = "none";
-        }
+
+      // Autocomplete input
+      const input = document.getElementById("address");
+      autocomplete = new google.maps.places.Autocomplete(input, {
+        types: ["address"],
+        componentRestrictions: { country: "us" },
       });
-    });
-
-    // ===== Phone formatter =====
-    const phoneNumberInput = document.getElementById("phoneNumberInput");
-    phoneNumberInput.addEventListener("input", (event) => {
-      const input = event.target;
-      let v = input.value.replace(/\D/g, "").slice(0, 10);
-      if (v.length > 6) v = `(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6)}`;
-      else if (v.length > 3) v = `(${v.slice(0,3)}) ${v.slice(3)}`;
-      input.value = v;
-    });
-
-    // ===== Boundary loading (GeoJSON from file) =====
-let map, autocomplete, marker;
-let boundaryPolygons = [];        // keep polygon refs so we can clear/redraw
-let homesteadBounds = null;       // LatLngBounds used for fit + autocomplete bias
-let homesteadGeoJSON = null;      // the loaded (and repaired) Feature
-
-function toLatLng(path) {
-  // path is an array of [lng, lat]
-  return path.map(([lng, lat]) => ({ lat, lng }));
-}
-function clearPolygons() {
-  boundaryPolygons.forEach(p => p.setMap(null));
-  boundaryPolygons = [];
-}
-function addPolygon(latlngRings) {
-  const poly = new google.maps.Polygon({
-    paths: latlngRings,                   // [outerRing, hole1, hole2, ...]
-    strokeColor: "#ef4444",
-    strokeOpacity: 1,
-    strokeWeight: 2,
-    fillColor: "#ef4444",
-    fillOpacity: 0.18
-  });
-  poly.setMap(map);
-  boundaryPolygons.push(poly);
-  // extend bounds by the outer ring
-  latlngRings[0].forEach(pt => homesteadBounds.extend(pt));
-}
-function drawGeoJSON(geojson) {
-  clearPolygons();
-  homesteadBounds = new google.maps.LatLngBounds();
-
-  const g = geojson.geometry;
-  if (g.type === "Polygon") {
-    const latlngRings = g.coordinates.map(r => toLatLng(r));
-    addPolygon(latlngRings);
-  } else if (g.type === "MultiPolygon") {
-    g.coordinates.forEach(poly => {
-      const latlngRings = poly.map(r => toLatLng(r));
-      addPolygon(latlngRings);
-    });
-  } else {
-    console.warn("Unsupported geometry:", g.type);
-  }
-
-  if (!homesteadBounds.isEmpty()) {
-    map.fitBounds(homesteadBounds);
-    if (autocomplete) autocomplete.setBounds(homesteadBounds);
-  }
-}
-
-// Repair self-intersections to avoid “striped” fill
-function repairPolygon(feature) {
-  try {
-    const unkinked = turf.unkinkPolygon(feature);
-    if (unkinked?.features?.length) {
-      if (unkinked.features.length === 1) {
-        return unkinked.features[0]; // valid Polygon
-      }
-      // combine pieces into a MultiPolygon
-      return {
-        type: "Feature",
-        properties: {},
-        geometry: {
-          type: "MultiPolygon",
-          coordinates: unkinked.features.map(f => f.geometry.coordinates)
-        }
-      };
-    }
-  } catch (e) {
-    console.warn("unkink failed, trying buffer(0):", e);
-  }
-  try {
-    // buffer(0) often fixes tiny topology issues
-    return turf.buffer(feature, 0, { units: "meters" });
-  } catch (e2) {
-    console.warn("buffer(0) failed:", e2);
-  }
-  return feature; // fallback
-}
-
-async function loadHomesteadGeoJSON() {
-  const res = await fetch("./homestead_boundary.geojson", { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to load homestead_boundary.geojson");
-  const raw = await res.json();
-
-  // normalize to a single Feature
-  let feature;
-  if (raw.type === "FeatureCollection") feature = raw.features[0];
-  else if (raw.type === "Feature") feature = raw;
-  else feature = { type: "Feature", properties: {}, geometry: raw.geometry || raw };
-
-  homesteadGeoJSON = repairPolygon(feature);
-  drawGeoJSON(homesteadGeoJSON);
-}
-
-// ===== Google Maps init (global; callback must find this) =====
-async function initMap() {
-  const mapCenter = { lat: 25.4687, lng: -80.4776 };
-  map = new google.maps.Map(document.getElementById("map-container"), {
-    center: mapCenter,
-    zoom: 13,
-    mapTypeControl: false,
-    streetViewControl: false
-  });
-
-  // Load and draw official boundary from file (handles Polygon/MultiPolygon)
-  await loadHomesteadGeoJSON();
-
-  // NOTE: your existing Autocomplete setup continues below this function
-  // (If your autocomplete code appears later in the file, leave it as-is;
-  // it will see homesteadBounds and bias suggestions correctly.)
-}
-
-
-      // Autocomplete setup (type-ahead)
-      const input = document.getElementById("addressInput");
-      autocomplete = new google.maps.places.Autocomplete(input, { types: ["address"], componentRestrictions: { country: "us" } });
-      autocomplete.setBounds(homesteadBounds); // bias suggestions to Homestead
-
       autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
         if (!place.geometry) {
           showResult(false, "No details available for that address.");
           return;
         }
-        displayResults(place.geometry.location);
+        checkPoint(place.geometry.location);
       });
+
+      // Load boundary GeoJSON
+      const resp = await fetch("homestead_boundary.geojson");
+      const geo = await resp.json();
+      boundary = geo.features[0];
+      const coords = boundary.geometry.coordinates[0].map(([lng, lat]) => ({ lat, lng }));
+      new google.maps.Polygon({
+        paths: coords,
+        strokeColor: "#FF0000",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: "#FF0000",
+        fillOpacity: 0.15,
+        map,
+      });
+
+      map.addListener("click", (e) => checkPoint(e.latLng));
+
+      loadProgress();
     }
 
-    // ===== Check & display =====
-    function displayResults(latLng) {
+    function checkPoint(latLng) {
+      if (!boundary) return;
       const point = turf.point([latLng.lng(), latLng.lat()]);
-      const polygon = turf.polygon(homesteadBoundary.geometry.coordinates);
-      const isInside = turf.booleanPointInPolygon(point, polygon, { ignoreBoundary: false });
-
-      // Reuse a single marker
-      if (!marker) {
-        marker = new google.maps.Marker({ position: latLng, map, title: "Location Checked" });
-      } else {
-        marker.setPosition(latLng);
-      }
-      map.setCenter(latLng);
+      const poly = turf.polygon(boundary.geometry.coordinates);
+      const inside = turf.booleanPointInPolygon(point, poly);
+      showResult(inside);
+      if (!marker) marker = new google.maps.Marker({ map });
+      marker.setPosition(latLng);
+      map.panTo(latLng);
       map.setZoom(15);
-
-      showResult(isInside);
     }
 
-    function showResult(isInside, override) {
+    function showResult(inside, msg) {
       const el = document.getElementById("result");
       el.style.display = "block";
-      el.classList.remove("outside");
-      if (override) { el.textContent = override; return; }
-
-      if (isInside) {
-        el.innerHTML = `
-          <ul style="list-style: disc; padding-left: 18px; margin: 0;">
-            <li><strong style="color: #15803d;">✔ Yes! Your address is in the Municipality of Homestead.</strong></li>
-            <li>📌 Please answer the questions below the map.</li>
-          </ul>`;
+      el.className = "";
+      if (msg) {
+        el.textContent = msg;
+        return;
+      }
+      if (inside) {
+        el.classList.add("ok");
+        el.textContent = "✔ Address is inside Homestead.";
       } else {
-        el.classList.add("outside");
-        el.innerHTML = `
-          <ul style="list-style: disc; padding-left: 18px; margin: 0;">
-            <li><strong style="color: #b91c1c;">❌ No, the address is not within the Municipality of Homestead.</strong></li>
-            <li>Think of 2 people you know in Homestead and share this campaign with them.</li>
-            <li>📢 <a href="https://yourcampaignlink.com" target="_blank" rel="noopener">Spread the word!</a></li>
-          </ul>`;
+        el.classList.add("out");
+        el.textContent = "✘ Address is outside Homestead.";
       }
     }
 
-    // ===== Popup & localStorage =====
-    function openPopup(){ document.getElementById("thankYouPopup").style.display = "block"; }
-    function closePopup(){ document.getElementById("thankYouPopup").style.display = "none"; }
-
-    function submitVoterData() {
-      const userName = document.getElementById("nameInput").value.trim();
-      const voterCount = document.getElementById("voterCountInput").value.trim();
-      const consent = document.getElementById("consent").checked;
-
-      if (!userName || !voterCount || Number(voterCount) <= 0) {
-        alert("Please enter your name and the number of voters at this address.");
-        return false;
+    document.getElementById("pledgeBtn").addEventListener("click", async () => {
+      const name = document.getElementById("name").value.trim();
+      const count = Number(document.getElementById("count").value);
+      const phone = document.getElementById("phone").value.trim();
+      if (!name || !count) {
+        alert("Name and voter count are required.");
+        return;
       }
-      const today = new Date().toISOString().split("T")[0];
-      const store = JSON.parse(localStorage.getItem("voterData") || "{}");
-      store[today] = store[today] || [];
-      store[today].push({ name: userName, count: Number(voterCount), pledged: consent });
-      localStorage.setItem("voterData", JSON.stringify(store));
-      return true;
+      try {
+        await fetch("/api/pledges", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, count, phone }),
+        });
+        openPopup();
+        loadProgress();
+      } catch {
+        alert("Unable to record pledge.");
+      }
+    });
+
+    function openPopup() {
+      document.getElementById("thankYou").style.display = "block";
+    }
+    function closePopup() {
+      document.getElementById("thankYou").style.display = "none";
     }
 
-    function handleConfirmation() {
-      if (!submitVoterData()) return;
-      alert("Thank you for pledging your commitment. Remember to request/renew your vote-by-mail ballot on the top right corner of the home page.");
-      closePopup();
-    }
-
-    function validateAndSubmit() {
-      const nameInput = document.getElementById("nameInput");
-      const voterCountInput = document.getElementById("voterCountInput");
-      const phoneInput = document.getElementById("phoneNumberInput");
-
-      let ok = true;
-      [nameInput, voterCountInput, phoneInput].forEach(el => el.classList.remove("error"));
-
-      if (!nameInput.value.trim()) { nameInput.classList.add("error"); ok = false; }
-      const count = parseInt(voterCountInput.value, 10);
-      if (isNaN(count) || count <= 0) { voterCountInput.classList.add("error"); ok = false; }
-
-      const digits = phoneInput.value.replace(/\D/g, "");
-      if (phoneInput.value.trim() && digits.length !== 10) {
-        phoneInput.classList.add("error");
-        alert("Please enter a valid 10-digit phone number or leave it blank.");
-        ok = false;
+    async function loadProgress() {
+      try {
+        const res = await fetch("/api/pledges/progress");
+        const data = await res.json();
+        const pct = Math.min(100, (data.pledged / data.goal) * 100);
+        document.getElementById("progressBar").style.width = pct + "%";
+        document.getElementById("progressText").textContent =
+          `${data.pledged} of ${data.goal} pledges`;
+      } catch {
+        document.getElementById("progressText").textContent = "Progress unavailable";
       }
-      if (!ok) return;
-
-      openPopup();
     }
   </script>
 
-  <!-- Google Maps loader: keep this LAST; replace YOUR_API_KEY_HERE -->
+  <!-- Google Maps API: replace YOUR_GOOGLE_MAPS_API_KEY -->
   <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap">
-  </script>
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initMap"></script>
 </body>
 </html>
+
+
 
 
 
