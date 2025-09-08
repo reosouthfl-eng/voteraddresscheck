@@ -84,20 +84,14 @@
   </style>
 
   <!-- Google Translate -->
-<script>
-  function googleTranslateElementInit() {
-    new google.translate.TranslateElement(
-      {
-        pageLanguage: 'en',
-        includedLanguages: 'en,es,ht', // 👈 add 'en' so users can switch back
-        layout: google.translate.TranslateElement.InlineLayout.SIMPLE
-      },
-      'google_translate_element'
-    );
-  }
-</script>
-<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
+  <script>
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement(
+        { pageLanguage: 'en', includedLanguages: 'es,ht', layout: google.translate.TranslateElement.InlineLayout.SIMPLE },
+        'google_translate_element'
+      );
+    }
+  </script>
   <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
   <!-- Turf.js -->
@@ -170,7 +164,6 @@
     </div>
   </div>
 
-  <!-- ===== Corrected single script block (do not nest another <script>) ===== -->
   <script>
     // ===== Menu toggle =====
     document.addEventListener("DOMContentLoaded", () => {
@@ -197,255 +190,160 @@
       input.value = v;
     });
 
-    // ===== City boundaries (multi-city) =====
-const cityConfigs = {
-  homestead: {
-    name: "Homestead, FL",
-    noun: "the Municipality of Homestead",
-    file: "./homestead_boundary.geojson",
-    color: "#ef4444",
-  },
-  floridacity: {
-    name: "Florida City, FL",
-    noun: "the City of Florida City",
-    file: "./floridacity_boundary.geojson",
-    color: "#3b82f6",
-  },
-};
-
-let currentCityKey = null; // will be set automatically based on address
-
-// ===== Boundary loading (GeoJSON from file) =====
+    // ===== Boundary loading (GeoJSON from file) =====
 let map, autocomplete, marker;
-let boundaryPolygons = [];
-let boundaryBounds = null;    // renamed from homesteadBounds
-let boundaryGeoJSON = null;   // renamed from homesteadGeoJSON
+let boundaryPolygons = [];        // keep polygon refs so we can clear/redraw
+let homesteadBounds = null;       // LatLngBounds used for fit + autocomplete bias
+let homesteadGeoJSON = null;      // the loaded (and repaired) Feature
 
-function toLatLng(path) { return path.map(([lng, lat]) => ({ lat, lng })); }
-function clearPolygons() { boundaryPolygons.forEach(p => p.setMap(null)); boundaryPolygons = []; }
-
-function addPolygon(latlngRings, strokeColor) {
-  const poly = new google.maps.Polygon({
-    paths: latlngRings,
-    strokeColor,
-    strokeOpacity: 1,
-    strokeWeight: 2,
-    fillColor: strokeColor,
-    fillOpacity: 0.18,
-  });
-  poly.setMap(map);
-  boundaryPolygons.push(poly);
-  latlngRings[0].forEach(pt => boundaryBounds.extend(pt));
+function toLatLng(path) {
+  // path is an array of [lng, lat]
+  return path.map(([lng, lat]) => ({ lat, lng }));
 }
-
-function drawGeoJSON(geojson, strokeColor = "#ef4444") {
-  clearPolygons();
-  boundaryBounds = new google.maps.LatLngBounds();
-
-  const g = geojson.geometry;
-  const add = (coords) => addPolygon(coords.map(r => toLatLng(r)), strokeColor);
-
-  if (g.type === "Polygon") {
-    add(g.coordinates);
-  } else if (g.type === "MultiPolygon") {
-    g.coordinates.forEach(poly => add(poly));
-  } else {
-    console.warn("Unsupported geometry:", g.type);
-  }
-
-  if (!boundaryBounds.isEmpty()) {
-    map.fitBounds(boundaryBounds);
-    if (autocomplete) autocomplete.setBounds(boundaryBounds);
-  }
-}
-    function repairPolygon(feature) {
-      try {
-        const unkinked = turf.unkinkPolygon(feature);
-        if (unkinked?.features?.length) {
-          if (unkinked.features.length === 1) return unkinked.features[0];
-          return {
-            type: "Feature", properties: {},
-            geometry: { type: "MultiPolygon", coordinates: unkinked.features.map(f => f.geometry.coordinates) }
-          };
-        }
-      } catch (e) { console.warn("unkink failed:", e); }
-      try { return turf.buffer(feature, 0, { units: "meters" }); }
-      catch (e2) { console.warn("buffer(0) failed:", e2); }
-      return feature;
-    }
-    // ===== Multi-city loading/cache =====
-let map, autocomplete, marker;
-let boundaryPolygons = [];
-let boundaryBounds = null;
-let boundaryGeoJSON = null;   // currently shown city's geometry
-const cityCache = {};         // { cityKey: { feature, bounds } }
-
 function clearPolygons() {
   boundaryPolygons.forEach(p => p.setMap(null));
   boundaryPolygons = [];
 }
-
-function toLatLng(path) { return path.map(([lng, lat]) => ({ lat, lng })); }
-
-function drawGeoJSON(geojson, strokeColor = "#ef4444") {
+function addPolygon(latlngRings) {
+  const poly = new google.maps.Polygon({
+    paths: latlngRings,                   // [outerRing, hole1, hole2, ...]
+    strokeColor: "#ef4444",
+    strokeOpacity: 1,
+    strokeWeight: 2,
+    fillColor: "#ef4444",
+    fillOpacity: 0.18
+  });
+  poly.setMap(map);
+  boundaryPolygons.push(poly);
+  // extend bounds by the outer ring
+  latlngRings[0].forEach(pt => homesteadBounds.extend(pt));
+}
+function drawGeoJSON(geojson) {
   clearPolygons();
-  boundaryBounds = new google.maps.LatLngBounds();
+  homesteadBounds = new google.maps.LatLngBounds();
 
   const g = geojson.geometry;
-  const add = (coords) => {
-    const latlngRings = coords.map(r => toLatLng(r));
-    const poly = new google.maps.Polygon({
-      paths: latlngRings,
-      strokeColor,
-      strokeOpacity: 1,
-      strokeWeight: 2,
-      fillColor: strokeColor,
-      fillOpacity: 0.18
+  if (g.type === "Polygon") {
+    const latlngRings = g.coordinates.map(r => toLatLng(r));
+    addPolygon(latlngRings);
+  } else if (g.type === "MultiPolygon") {
+    g.coordinates.forEach(poly => {
+      const latlngRings = poly.map(r => toLatLng(r));
+      addPolygon(latlngRings);
     });
-    poly.setMap(map);
-    boundaryPolygons.push(poly);
-    latlngRings[0].forEach(pt => boundaryBounds.extend(pt));
-  };
-
-  if (g.type === "Polygon") add(g.coordinates);
-  else if (g.type === "MultiPolygon") g.coordinates.forEach(add);
-
-  if (!boundaryBounds.isEmpty()) {
-    map.fitBounds(boundaryBounds);
-  }
-}
-
-async function loadCityFeature(cityKey) {
-  // return cached
-  if (cityCache[cityKey]?.feature) return cityCache[cityKey];
-
-  const cfg = cityConfigs[cityKey];
-  if (!cfg) throw new Error("Unknown city key: " + cityKey);
-
-  const res = await fetch(cfg.file, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to load boundary file: " + cfg.file);
-  const raw = await res.json();
-
-  // normalize to Feature
-  let feature;
-  if (raw.type === "FeatureCollection") feature = raw.features[0];
-  else if (raw.type === "Feature") feature = raw;
-  else feature = { type: "Feature", properties: {}, geometry: raw.geometry || raw };
-
-  // optional repair for self-intersections
-  feature = repairPolygon(feature);
-
-  // precompute bounds
-  const tempBounds = new google.maps.LatLngBounds();
-  const g = feature.geometry;
-  const addBounds = (coords) => {
-    const ring = toLatLng(coords[0]); // outer ring for bounds
-    ring.forEach(pt => tempBounds.extend(pt));
-  };
-  if (g.type === "Polygon") addBounds(g.coordinates);
-  else if (g.type === "MultiPolygon") g.coordinates.forEach(addBounds);
-
-  cityCache[cityKey] = { feature, bounds: tempBounds };
-  return cityCache[cityKey];
-}
-
-// Try each city and return the key that contains the point (or null)
-function detectCityKeyForPoint(latLng) {
-  const pt = turf.point([latLng.lng(), latLng.lat()]);
-  for (const key of Object.keys(cityConfigs)) {
-    const cached = cityCache[key];
-    if (!cached) continue; // must be loaded first
-    const g = cached.feature.geometry;
-    const inside =
-      g.type === "Polygon"
-        ? turf.booleanPointInPolygon(pt, turf.polygon(g.coordinates), { ignoreBoundary: false })
-        : g.type === "MultiPolygon"
-        ? turf.booleanPointInPolygon(pt, turf.multiPolygon(g.coordinates), { ignoreBoundary: false })
-        : false;
-    if (inside) return key;
-  }
-  return null;
-}
-
-function updateCityUI() {
-  const cfg = currentCityKey ? cityConfigs[currentCityKey] : null;
-  const titleEl = document.getElementById("pageTitle");
-  const addr = document.getElementById("addressInput");
-  if (cfg) {
-    if (titleEl) titleEl.textContent = `Check if Your Address is Within ${cfg.noun}`;
-    if (addr) addr.placeholder = `Enter address in ${cfg.name}`;
   } else {
-    if (titleEl) titleEl.textContent = `Check if Your Address is Within the Municipality`;
-    if (addr) addr.placeholder = `Enter address`;
+    console.warn("Unsupported geometry:", g.type);
+  }
+
+  if (!homesteadBounds.isEmpty()) {
+    map.fitBounds(homesteadBounds);
+    if (autocomplete) autocomplete.setBounds(homesteadBounds);
   }
 }
-    async function loadCityBoundary(cityKey) {
-  const cfg = cityConfigs[cityKey];
-  if (!cfg) throw new Error("Unknown city key: " + cityKey);
 
-  const res = await fetch(cfg.file, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to load boundary file: " + cfg.file);
+// Repair self-intersections to avoid “striped” fill
+function repairPolygon(feature) {
+  try {
+    const unkinked = turf.unkinkPolygon(feature);
+    if (unkinked?.features?.length) {
+      if (unkinked.features.length === 1) {
+        return unkinked.features[0]; // valid Polygon
+      }
+      // combine pieces into a MultiPolygon
+      return {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "MultiPolygon",
+          coordinates: unkinked.features.map(f => f.geometry.coordinates)
+        }
+      };
+    }
+  } catch (e) {
+    console.warn("unkink failed, trying buffer(0):", e);
+  }
+  try {
+    // buffer(0) often fixes tiny topology issues
+    return turf.buffer(feature, 0, { units: "meters" });
+  } catch (e2) {
+    console.warn("buffer(0) failed:", e2);
+  }
+  return feature; // fallback
+}
 
+async function loadHomesteadGeoJSON() {
+  const res = await fetch("./homestead_boundary.geojson", { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load homestead_boundary.geojson");
   const raw = await res.json();
+
+  // normalize to a single Feature
   let feature;
   if (raw.type === "FeatureCollection") feature = raw.features[0];
   else if (raw.type === "Feature") feature = raw;
   else feature = { type: "Feature", properties: {}, geometry: raw.geometry || raw };
 
-  // optional repair if needed
-  boundaryGeoJSON = repairPolygon(feature);
-  drawGeoJSON(boundaryGeoJSON, cfg.color);
+  homesteadGeoJSON = repairPolygon(feature);
+  drawGeoJSON(homesteadGeoJSON);
 }
-    // ===== Google Maps init (global; callback must find this) =====
-    async function initMap() {
-      const mapCenter = { lat: 25.4687, lng: -80.4776 };
-      map = new google.maps.Map(document.getElementById("map-container"), {
-        center: mapCenter, zoom: 13, mapTypeControl: false, streetViewControl: false
-      });
 
-      try { await loadHomesteadGeoJSON(); }
-      catch (err) { console.error("GeoJSON load failed:", err); }
+// ===== Google Maps init (global; callback must find this) =====
+async function initMap() {
+  const mapCenter = { lat: 25.4687, lng: -80.4776 };
+  map = new google.maps.Map(document.getElementById("map-container"), {
+    center: mapCenter,
+    zoom: 13,
+    mapTypeControl: false,
+    streetViewControl: false
+  });
 
-      // Autocomplete (keep INSIDE initMap)
+  // Load and draw official boundary from file (handles Polygon/MultiPolygon)
+  await loadHomesteadGeoJSON();
+
+  // NOTE: your existing Autocomplete setup continues below this function
+  // (If your autocomplete code appears later in the file, leave it as-is;
+  // it will see homesteadBounds and bias suggestions correctly.)
+}
+
+
+      // Autocomplete setup (type-ahead)
       const input = document.getElementById("addressInput");
-      autocomplete = new google.maps.places.Autocomplete(input, {
-        types: ["address"], componentRestrictions: { country: "us" }
-      });
-      if (homesteadBounds) autocomplete.setBounds(homesteadBounds);
+      autocomplete = new google.maps.places.Autocomplete(input, { types: ["address"], componentRestrictions: { country: "us" } });
+      autocomplete.setBounds(homesteadBounds); // bias suggestions to Homestead
 
       autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
-        if (!place.geometry) { showResult(false, "No details available for that address."); return; }
+        if (!place.geometry) {
+          showResult(false, "No details available for that address.");
+          return;
+        }
         displayResults(place.geometry.location);
       });
     }
-    // expose for Google callback
-    window.initMap = initMap;
 
     // ===== Check & display =====
     function displayResults(latLng) {
-      if (!homesteadGeoJSON) { alert("Boundary not loaded."); return; }
       const point = turf.point([latLng.lng(), latLng.lat()]);
-      const g = homesteadGeoJSON.geometry;
-      const isInside =
-        g.type === "Polygon"
-          ? turf.booleanPointInPolygon(point, turf.polygon(g.coordinates), { ignoreBoundary: false })
-          : g.type === "MultiPolygon"
-          ? turf.booleanPointInPolygon(point, turf.multiPolygon(g.coordinates), { ignoreBoundary: false })
-          : false;
+      const polygon = turf.polygon(homesteadBoundary.geometry.coordinates);
+      const isInside = turf.booleanPointInPolygon(point, polygon, { ignoreBoundary: false });
 
-      if (!marker) marker = new google.maps.Marker({ position: latLng, map, title: "Location Checked" });
-      else marker.setPosition(latLng);
+      // Reuse a single marker
+      if (!marker) {
+        marker = new google.maps.Marker({ position: latLng, map, title: "Location Checked" });
+      } else {
+        marker.setPosition(latLng);
+      }
       map.setCenter(latLng);
       map.setZoom(15);
 
       showResult(isInside);
     }
+
     function showResult(isInside, override) {
       const el = document.getElementById("result");
       el.style.display = "block";
       el.classList.remove("outside");
       if (override) { el.textContent = override; return; }
+
       if (isInside) {
         el.innerHTML = `
           <ul style="list-style: disc; padding-left: 18px; margin: 0;">
@@ -466,12 +364,15 @@ function updateCityUI() {
     // ===== Popup & localStorage =====
     function openPopup(){ document.getElementById("thankYouPopup").style.display = "block"; }
     function closePopup(){ document.getElementById("thankYouPopup").style.display = "none"; }
+
     function submitVoterData() {
       const userName = document.getElementById("nameInput").value.trim();
       const voterCount = document.getElementById("voterCountInput").value.trim();
       const consent = document.getElementById("consent").checked;
+
       if (!userName || !voterCount || Number(voterCount) <= 0) {
-        alert("Please enter your name and the number of voters at this address."); return false;
+        alert("Please enter your name and the number of voters at this address.");
+        return false;
       }
       const today = new Date().toISOString().split("T")[0];
       const store = JSON.parse(localStorage.getItem("voterData") || "{}");
@@ -480,20 +381,25 @@ function updateCityUI() {
       localStorage.setItem("voterData", JSON.stringify(store));
       return true;
     }
+
     function handleConfirmation() {
       if (!submitVoterData()) return;
       alert("Thank you for pledging your commitment. Remember to request/renew your vote-by-mail ballot on the top right corner of the home page.");
       closePopup();
     }
+
     function validateAndSubmit() {
       const nameInput = document.getElementById("nameInput");
       const voterCountInput = document.getElementById("voterCountInput");
       const phoneInput = document.getElementById("phoneNumberInput");
+
       let ok = true;
       [nameInput, voterCountInput, phoneInput].forEach(el => el.classList.remove("error"));
+
       if (!nameInput.value.trim()) { nameInput.classList.add("error"); ok = false; }
       const count = parseInt(voterCountInput.value, 10);
       if (isNaN(count) || count <= 0) { voterCountInput.classList.add("error"); ok = false; }
+
       const digits = phoneInput.value.replace(/\D/g, "");
       if (phoneInput.value.trim() && digits.length !== 10) {
         phoneInput.classList.add("error");
@@ -501,16 +407,20 @@ function updateCityUI() {
         ok = false;
       }
       if (!ok) return;
+
       openPopup();
     }
   </script>
 
-  <!-- Google Maps loader: keep this LAST -->
+  <!-- Google Maps loader: keep this LAST; replace YOUR_API_KEY_HERE -->
   <script async defer
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap">
   </script>
 </body>
 </html>
+
+
+
 
 
 
