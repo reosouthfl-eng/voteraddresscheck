@@ -133,10 +133,10 @@
       <input type="text" id="website" name="website" style="display:none" autocomplete="off" tabindex="-1" aria-hidden="true" />
 
       <button class="button" type="submit">Create account</button>
+
+      <!-- LINKS: trimmed to only Back to login -->
       <div class="links">
         <a href="./login.html">Back to login</a>
-        <a href="./forgot-id.html">Forgot User ID</a>
-        <a href="./forgot-password.html">Forgot Password</a>
       </div>
     </form>
   </div>
@@ -206,12 +206,12 @@
       toastMsg('Account created (demo).');
 
       // TODO: send to backend; attach reCAPTCHA/hCaptcha token and client fingerprint if desired.
-      // const token = await grecaptcha.execute('SITE_KEY', {action:'register'}); // if using reCAPTCHA v3
+      // const token = await grecaptcha.execute('SITE_KEY', {action:'register'});
       // await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...cfg, token}) });
 
-      // For now, go to login
       setTimeout(()=> window.location.href = './login.html', 800);
     });
   </script>
 </body>
 </html>
+
