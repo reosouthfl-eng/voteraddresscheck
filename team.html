@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Team & Access — Municipality Address Check</title>
+  <link href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap" rel="stylesheet" />
+  <style>
+    :root{ --green:#22c55e; --green-700:#16a34a; --border:#e5e7eb; --muted:#f3f4f6; --ink:#111827; --error:#b91c1c; --blue:#2563eb; }
+    *{box-sizing:border-box}
+    body{ font-family:Lato,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; align-items:center; background:#f4f4f9; color:var(--ink); }
+    .header-wrapper{ display:flex; align-items:center; justify-content:space-between; width:92%; max-width:920px; margin:12px auto 0; }
+    .back-link{ text-decoration:none; color:#111; font-size:13px; padding:8px 10px; border-radius:9999px; background:#fff; border:1px solid var(--border); }
+    .back-link:hover{ background:var(--muted); }
+    .logout{ text-decoration:none; color:#111; font-size:13px; padding:8px 10px; border-radius:9999px; background:#fff; border:1px solid var(--border); }
+    .logout:hover{ background:var(--muted); }
+    h1{ font-size:18px; font-weight:700; width:92%; max-width:920px; margin:10px auto 6px; }
+    .row{ width:92%; max-width:920px; display:grid; grid-template-columns:1fr; gap:12px; margin:8px auto; }
+    .card{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px; box-shadow:0 4px 10px rgba(0,0,0,.04); }
+    .section-title{ font-size:14px; font-weight:700; margin-bottom:8px; }
+    .grid-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+    .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .input, select{ width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; font-size:14px; }
+    .button{ padding:10px 14px; font-size:14px; background:var(--green); color:#fff; border:none; border-radius:10px; cursor:pointer; font-weight:700; }
+    .button:hover{ background:var(--green-700); }
+    .muted{ background:#fff; color:#111; border:1px solid var(--border); }
+    .table{ width:100%; border-collapse:collapse; }
+    .table th, .table td{ border-bottom:1px solid var(--border); padding:8px; font-size:13px; text-align:left; }
+    .badge{ display:inline-block; padding:2px 8px; border-radius:9999px; font-size:12px; background:#f3f4f6; border:1px solid var(--border); }
+    .switch{ display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+    .switch input{ transform:scale(1.2); }
+    .hint{ font-size:12px; color:#6b7280; }
+    .toast{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#111827; color:#fff; padding:10px 14px; border-radius:10px; font-size:13px; display:none; }
+    @media (max-width: 760px){ .grid-3{ grid-template-columns:1fr; } .grid-2{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="header-wrapper">
+    <a class="back-link" href="./boundary.html">← Back</a>
+    <a class="logout" href="#" id="logoutBtn">Log out</a>
+  </div>
+
+  <h1>Team & Access</h1>
+
+  <div class="row">
+    <!-- Invite/Add member -->
+    <div class="card">
+      <div class="section-title">Invite a team member</div>
+      <div class="grid-3">
+        <input id="mName"   class="input" type="text" placeholder="Full name" />
+        <input id="mEmail"  class="input" type="email" placeholder="email@example.com" />
+        <select id="mRole">
+          <option>Manager</option>
+          <option>Organizer</option>
+          <option>Volunteer</option>
+          <option>Admin</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button id="addBtn" class="button">Add member</button>
+        <button id="inviteBtn" class="button muted">Generate invite email</button>
+      </div>
+      <div class="hint" style="margin-top:6px;">Invites are tracked locally for now. Later we’ll send unique, expiring links from the server.</div>
+    </div>
+
+    <!-- Team list -->
+    <div class="card">
+      <div class="section-title">Current team</div>
+      <table class="table" id="teamTable">
+        <thead>
+          <tr>
+            <th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="teamBody">
+          <!-- rows injected -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Role privileges -->
+    <div class="card">
+      <div class="section-title">Role privileges</div>
+      <div class="hint" style="margin-bottom:8px;">Admins always have all privileges. Adjust others as needed.</div>
+      <div id="privMatrix"></div>
+      <div style="margin-top:10px;">
+        <button id="savePrivs" class="button">Save privileges</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    /* ========= Auth guard (demo) ========= */
+    const toast = document.getElementById('toast');
+    function toastMsg(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1800); }
+
+    const current = JSON.parse(localStorage.getItem('current_user') || 'null');
+    if (!current){ window.location.href = './login.html'; }
+
+    // Require a role that can manage team
+    const DEFAULT_PRIVS = {
+      'Admin':     ['view_pledges','export_data','manage_team','configure_campaign','send_comms'],
+      'Manager':   ['view_pledges','export_data','manage_team','configure_campaign','send_comms'],
+      'Organizer': ['view_pledges','send_comms'],
+      'Volunteer': ['view_pledges']
+    };
+    const ALL_PRIVS = ['view_pledges','export_data','manage_team','configure_campaign','send_comms'];
+
+    function getPrivs(){
+      const stored = JSON.parse(localStorage.getItem('role_privileges') || 'null');
+      return stored || DEFAULT_PRIVS;
+    }
+    function can(role, perm){
+      const rp = getPrivs();
+      if (role === 'Admin') return true;
+      return (rp[role] || []).includes(perm);
+    }
+    if (!can(current?.role || 'Volunteer', 'manage_team')){
+      toastMsg('You do not have access to Team.');
+      setTimeout(()=> window.location.href = './boundary.html', 900);
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', (e)=>{
+      e.preventDefault();
+      localStorage.removeItem('current_user');
+      window.location.href = './login.html';
+    });
+
+    /* ========= Team data (local demo) ========= */
+    function getTeam(){ return JSON.parse(localStorage.getItem('team_members') || '[]'); }
+    function setTeam(arr){ localStorage.setItem('team_members', JSON.stringify(arr)); }
+
+    // Seed admin (current user) if empty
+    (function seed(){
+      const team = getTeam();
+      if (team.length === 0 && current){
+        team.push({ id: crypto.randomUUID(), name: current.name || 'Owner', email: current.email, role: 'Admin', status: 'Active' });
+        setTeam(team);
+      }
+      // Seed role privs if none
+      if (!localStorage.getItem('role_privileges')) localStorage.setItem('role_privileges', JSON.stringify(DEFAULT_PRIVS));
+    })();
+
+    /* ========= Invite/Add member ========= */
+    const mName  = document.getElementById('mName');
+    const mEmail = document.getElementById('mEmail');
+    const mRole  = document.getElementById('mRole');
+    document.getElementById('addBtn').addEventListener('click', ()=>{
+      if (!mName.value.trim() || !mEmail.value.trim()){ toastMsg('Enter name and email.'); return; }
+      const team = getTeam();
+      const dup = team.find(t => t.email.toLowerCase() === mEmail.value.trim().toLowerCase());
+      if (dup){ toastMsg('Member already exists.'); return; }
+      team.push({ id: crypto.randomUUID(), name: mName.value.trim(), email: mEmail.value.trim(), role: mRole.value, status:'Pending' });
+      setTeam(team);
+      mName.value=''; mEmail.value='';
+      renderTeam();
+      toastMsg('Member added (pending).');
+    });
+
+    document.getElementById('inviteBtn').addEventListener('click', ()=>{
+      if (!mName.value.trim() || !mEmail.value.trim()){ toastMsg('Enter name and email.'); return; }
+      const code = Math.random().toString(36).slice(2,8);
+      const inviteUrl = `${location.origin}${location.pathname.replace(/[^/]+$/, '')}login.html?invite=${code}&role=${encodeURIComponent(mRole.value)}&email=${encodeURIComponent(mEmail.value.trim())}`;
+      const subject = encodeURIComponent('You are invited to join the campaign team');
+      const body = encodeURIComponent(`Hi ${mName.value.trim()},\n\nYou've been invited to join the campaign as ${mRole.value}.\n\nClick to join: ${inviteUrl}\n\n`);
+      window.location.href = `mailto:${encodeURIComponent(mEmail.value.trim())}?subject=${subject}&body=${body}`;
+    });
+
+    /* ========= Team table ========= */
+    function renderTeam(){
+      const tbody = document.getElementById('teamBody');
+      const team = getTeam();
+      tbody.innerHTML = '';
+      team.forEach((m, idx)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${m.name}</td>
+          <td>${m.email}</td>
+          <td><span class="badge">${m.role}</span></td>
+          <td>${m.status}</td>
+          <td>
+            <button data-i="${idx}" class="btn-activate" style="margin-right:6px;">${m.status==='Active'?'Deactivate':'Activate'}</button>
+            <button data-i="${idx}" class="btn-role" style="margin-right:6px;">Change role</button>
+            <button data-i="${idx}" class="btn-remove">Remove</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // wire actions
+      tbody.querySelectorAll('.btn-activate').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          const i = +e.target.getAttribute('data-i');
+          const t = getTeam();
+          t[i].status = t[i].status === 'Active' ? 'Inactive' : 'Active';
+          setTeam(t); renderTeam();
+        });
+      });
+      tbody.querySelectorAll('.btn-role').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          const i = +e.target.getAttribute('data-i');
+          const t = getTeam();
+          const role = prompt('Role: Admin, Manager, Organizer, Volunteer', t[i].role) || t[i].role;
+          if (!['Admin','Manager','Organizer','Volunteer'].includes(role)) return;
+          t[i].role = role;
+          setTeam(t); renderTeam();
+        });
+      });
+      tbody.querySelectorAll('.btn-remove').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          const i = +e.target.getAttribute('data-i');
+          const t = getTeam();
+          if (confirm(`Remove ${t[i].name}?`)){
+            t.splice(i,1); setTeam(t); renderTeam();
+          }
+        });
+      });
+    }
+    renderTeam();
+
+    /* ========= Privileges matrix =*
