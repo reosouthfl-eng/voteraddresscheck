@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Register — Municipality Address Check</title>
+  <link href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap" rel="stylesheet" />
+  <style>
+    :root{ --green:#22c55e; --green-700:#16a34a; --border:#e5e7eb; --muted:#f3f4f6; --ink:#111827; --error:#b91c1c; --blue:#2563eb; }
+    *{box-sizing:border-box}
+    body{ font-family:Lato,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; align-items:center; background:#f4f4f9; color:var(--ink); }
+    .header-wrapper{ display:flex; align-items:center; justify-content:flex-start; width:92%; max-width:420px; margin:12px auto 0; }
+    .back-link{ text-decoration:none; color:#111; font-size:13px; padding:8px 10px; border-radius:9999px; background:#fff; border:1px solid var(--border); }
+    .back-link:hover{ background:var(--muted); }
+    h1{ font-size:16px; font-weight:700; width:92%; max-width:420px; margin:10px auto 6px; }
+    .sub{ font-size:13px; width:92%; max-width:420px; margin:0 auto 10px; color:#4b5563; }
+    .card{ width:92%; max-width:420px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px; box-shadow:0 4px 10px rgba(0,0,0,.04); }
+    .row{ display:grid; grid-template-columns:1fr; gap:6px; margin-bottom:10px; }
+    .row label{ font-size:14px; font-weight:700; }
+    .input, select, textarea{ width:100%; padding:12px; border:1px solid #ccc; border-radius:8px; font-size:14px; }
+    .input:focus, select:focus, textarea:focus{ outline:none; border-color:#0073e6; }
+    .hint{ font-size:12px; color:#6b7280; }
+    .checkbox-row{ display:flex; align-items:flex-start; gap:8px; }
+    .button{ width:100%; padding:12px 20px; font-size:14px; background:var(--green); color:#fff; border:none; border-radius:10px; cursor:pointer; font-weight:700; }
+    .button:hover{ background:var(--green-700); }
+    .muted-btn{ width:100%; padding:10px 14px; background:#fff; border:1px solid var(--border); border-radius:10px; cursor:pointer; font-size:13px; }
+    .muted-btn:hover{ background:#f9fafb; }
+    .two{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .progress{ background:#f3f4f6; border:1px solid var(--border); border-radius:9999px; height:12px; overflow:hidden; }
+    .bar{ background:var(--green); height:100%; width:0%; transition:width .25s ease; }
+    .progress-row{ display:flex; align-items:center; justify-content:space-between; font-size:12px; color:#374151; margin-top:4px; }
+    .toast{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#111827; color:#fff; padding:10px 14px; border-radius:10px; font-size:13px; display:none; }
+    .error-text{ font-size:12px; color:var(--error); display:none; }
+    .links{ display:flex; justify-content:flex-start; gap:12px; margin:12px 0 0; flex-wrap:wrap; }
+    .links a{ font-size:13px; color:#111; text-decoration:none; }
+    .links a:hover{ text-decoration:underline; }
+  </style>
+</head>
+<body>
+  <div class="header-wrapper">
+    <a class="back-link" href="./login.html">← Back</a>
+  </div>
+
+  <h1>Create your account</h1>
+  <div class="sub">Set up your campaign details and goal.</div>
+
+  <div class="card">
+    <form id="regForm" novalidate>
+      <!-- Account -->
+      <div class="row">
+        <label for="fullName">Full name</label>
+        <input id="fullName" class="input" type="text" placeholder="Your name" required />
+      </div>
+      <div class="row">
+        <label for="email">Email (username)</label>
+        <input id="email" class="input" type="email" placeholder="you@example.com" autocomplete="username" required />
+        <div id="emailErr" class="error-text">Please enter a valid email.</div>
+      </div>
+      <div class="two">
+        <div>
+          <label for="password">Password</label>
+          <input id="password" class="input" type="password" placeholder="At least 8 characters" autocomplete="new-password" required />
+          <div id="pwErr" class="error-text">Min 8 characters.</div>
+        </div>
+        <div>
+          <label for="password2">Confirm password</label>
+          <input id="password2" class="input" type="password" placeholder="Re-enter password" autocomplete="new-password" required />
+          <div id="pw2Err" class="error-text">Passwords must match.</div>
+        </div>
+      </div>
+      <div class="row">
+        <label for="phone">Phone</label>
+        <input id="phone" class="input" type="tel" placeholder="(123) 456-7890" inputmode="tel" />
+        <div class="hint">Optional, used for account recovery/notifications.</div>
+      </div>
+
+      <!-- Campaign basics -->
+      <div class="row">
+        <label for="campaignName">Campaign / Candidate name</label>
+        <input id="campaignName" class="input" type="text" placeholder="e.g., Friends of Jane Doe" required />
+      </div>
+      <div class="two">
+        <div>
+          <label for="office">Office sought</label>
+          <select id="office">
+            <option value="">Select</option>
+            <option>Mayor</option>
+            <option>City Council</option>
+            <option>Commissioner</option>
+            <option>School Board</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label for="city">City</label>
+          <select id="city">
+            <option>Homestead</option>
+            <option>Florida City</option>
+          </select>
+        </div>
+      </div>
+      <div class="two">
+        <div>
+          <label for="district">District/Seat (optional)</label>
+          <input id="district" class="input" type="text" placeholder="e.g., Seat 2" />
+        </div>
+        <div>
+          <label for="electionDate">Election date</label>
+          <input id="electionDate" class="input" type="date" />
+        </div>
+      </div>
+      <div class="row">
+        <label for="treasurer">Campaign treasurer (optional)</label>
+        <input id="treasurer" class="input" type="text" placeholder="Treasurer name" />
+      </div>
+
+      <!-- Goal + progress -->
+      <div class="row">
+        <label for="votesGoal">Votes goal</label>
+        <input id="votesGoal" class="input" type="number" min="1" placeholder="e.g., 3500" required />
+        <div class="hint">We’ll track pledges toward this number.</div>
+        <div class="progress" aria-hidden="true"><div id="bar" class="bar" style="width:0%"></div></div>
+        <div class="progress-row"><span id="progressLabel">0 / 0</span><span id="progressPct">0%</span></div>
+      </div>
+
+      <!-- Policies -->
+      <div class="row checkbox-row">
+        <input id="consent" type="checkbox" />
+        <label for="consent" style="font-weight:400;">I agree to the Terms & Privacy Policy and consent to contact about my account.</label>
+      </div>
+
+      <!-- Anti-bot (honeypot). Keep hidden; bots will fill it. -->
+      <input type="text" id="website" name="website" style="display:none" autocomplete="off" tabindex="-1" aria-hidden="true" />
+
+      <button class="button" type="submit">Create account</button>
+      <div class="links">
+        <a href="./login.html">Back to login</a>
+        <a href="./forgot-id.html">Forgot User ID</a>
+        <a href="./forgot-password.html">Forgot Password</a>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const el = id => document.getElementById(id);
+    const toast = el('toast');
+
+    function toastMsg(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',2000); }
+    function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+    function getPledges(){ return parseInt(localStorage.getItem('pledges_total') || '0', 10); }
+
+    const votesGoal = el('votesGoal');
+    const bar = el('bar');
+    const progressLabel = el('progressLabel');
+    const progressPct = el('progressPct');
+
+    function updateProgress(){
+      const goal = Math.max(parseInt(votesGoal.value || '0', 10), 0);
+      const pledges = getPledges();
+      const pct = goal > 0 ? Math.min(100, Math.round((pledges/goal)*100)) : 0;
+      bar.style.width = pct + '%';
+      progressLabel.textContent = `${pledges.toLocaleString()} / ${goal.toLocaleString()}`;
+      progressPct.textContent = `${pct}%`;
+    }
+
+    votesGoal.addEventListener('input', updateProgress);
+    updateProgress();
+
+    const form = el('regForm');
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+
+      const email = el('email'), pw = el('password'), pw2 = el('password2');
+
+      // Honeypot
+      if (el('website').value.trim() !== '') { toastMsg('Submission blocked.'); return; }
+
+      // Basic validation
+      let ok = true;
+      if (!validEmail(email.value.trim())) { el('emailErr').style.display='block'; ok=false; } else el('emailErr').style.display='none';
+      if ((pw.value||'').length < 8) { el('pwErr').style.display='block'; ok=false; } else el('pwErr').style.display='none';
+      if (pw.value !== pw2.value) { el('pw2Err').style.display='block'; ok=false; } else el('pw2Err').style.display='none';
+      if (!el('fullName').value.trim()) ok=false;
+      if (!el('campaignName').value.trim()) ok=false;
+      if (!votesGoal.value || parseInt(votesGoal.value,10) < 1) ok=false;
+      if (!el('consent').checked) ok=false;
+      if (!ok) { toastMsg('Please review required fields.'); return; }
+
+      // Persist campaign settings locally (frontend)
+      const cfg = {
+        full_name: el('fullName').value.trim(),
+        email: email.value.trim(),
+        phone: el('phone').value.trim(),
+        campaign_name: el('campaignName').value.trim(),
+        office: el('office').value,
+        city: el('city').value,
+        district: el('district').value.trim(),
+        election_date: el('electionDate').value,
+        treasurer: el('treasurer').value.trim(),
+        votes_goal: parseInt(votesGoal.value, 10)
+      };
+      localStorage.setItem('campaign_settings', JSON.stringify(cfg));
+      localStorage.setItem('campaign_goal', String(cfg.votes_goal));
+      toastMsg('Account created (demo).');
+
+      // TODO: send to backend; attach reCAPTCHA/hCaptcha token and client fingerprint if desired.
+      // const token = await grecaptcha.execute('SITE_KEY', {action:'register'}); // if using reCAPTCHA v3
+      // await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...cfg, token}) });
+
+      // For now, go to login
+      setTimeout(()=> window.location.href = './login.html', 800);
+    });
+  </script>
+</body>
+</html>
