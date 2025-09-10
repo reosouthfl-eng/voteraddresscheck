@@ -49,7 +49,8 @@
     .consent-wrap{ width:92%; max-width:420px; margin:8px auto; display:flex; align-items:flex-start; gap:10px; }
     .consent-wrap input[type="checkbox"]{ margin-top:2px; flex:0 0 auto; }
     .consent-wrap label{ font-size:14px; font-weight:normal; line-height:1.35; text-align:left; flex:1 1 auto; }
-      .linkbar { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+
+    .linkbar { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
     .linkbar a { flex:1 1 48%; text-align:center; text-decoration:none; color:#111; background:#fff; border:1px solid #e5e7eb; padding:10px; border-radius:10px; font-size:13px; }
     .linkbar a.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
       .login-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:9999px;background:#f3f4f6;border:1px solid #e5e7eb;color:#0ea5e9;font-weight:700;font-size:13px;letter-spacing:.02em;text-decoration:none;line-height:1;}
@@ -62,10 +63,9 @@
 </head>
 <body>
   <div class="header-wrapper">
-  <a href="./login.html" class="login-btn" aria-label="Log in">
-    LOG IN <span class="arrow" aria-hidden="true">▸</span>
-  </a>
-</div>
+    <a href="https://lkt.337.myftpupload.com/login" target="_blank" rel="noopener" class="login-btn" aria-label="Log in">LOG IN <span class="arrow" aria-hidden="true">▸</span></a>
+  </div>
+
   <h1 id="pageTitle">Check if Your Address is Within the Municipality</h1>
 
   <div class="row">
@@ -137,7 +137,7 @@
   </div>
 
   <script>
-    // Hamburger menu toggle
+    // Hamburger menu toggle (safe if elements not present)
     (function(){
       const btn = document.getElementById('hamburgerMenu');
       const dd = document.getElementById('menuDropdown');
@@ -252,18 +252,23 @@
       const base = location.href.split('#')[0];
       const shareUrl = `${base}?ref=pledge-${shortId}`;
       const msg = `I just checked my address. If you live in ${cityName}, can you pledge your support?`;
+
       const wa = document.getElementById('shareWaOut');
       const sms = document.getElementById('shareSmsOut');
       const cp = document.getElementById('shareCopyOut');
       const em = document.getElementById('shareEmailOut');
       if (!wa || !sms || !cp || !em) return;
+
       wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg+' '+shareUrl)}`;
       sms.href = `sms:?&body=${encodeURIComponent(msg+' '+shareUrl)}`;
-      cp.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(`${msg} ${shareUrl}`); alert('Link copied'); };
+
+      // ⬇️ Copy button: ONLY the URL
+      cp.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(shareUrl); alert('Link copied'); };
+
       em.href = `mailto:?subject=${encodeURIComponent('Support ' + cityName)}&body=${encodeURIComponent(msg+' '+shareUrl)}`;
+
       const vol = document.getElementById('volunteerLink');
-if (vol) vol.href = './volunteer.html';
- // TODO: replace with your volunteer form URL
+      if (vol) vol.href = 'https://example.com/volunteer'; // TODO: replace with your volunteer form URL
     }
 
     function showInside(cityName){
@@ -271,7 +276,7 @@ if (vol) vol.href = './volunteer.html';
       resultEl.classList.remove('outside');
       resultEl.innerHTML = `
         <div><strong>Yes! Your address is in ${cityName}.</strong></div>
-        <div class="small">Please answer the questions below.</div>
+        <div class="small">Please answer the questions below the map.</div>
       `;
     }
 
@@ -336,9 +341,13 @@ if (vol) vol.href = './volunteer.html';
       const cityName = CITY_CONFIG[citySelect.value].name;
       const msg = `Pledge your support if you live in ${cityName}:`;
       const url = location.href.split('#')[0];
+
       shareWa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg + ' ' + url)}`;
       shareSms.href = `sms:?&body=${encodeURIComponent(msg + ' ' + url)}`;
-      shareCopy.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(`${msg} ${url}`); alert('Link copied'); };
+
+      // ⬇️ Copy button: ONLY the URL
+      shareCopy.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(url); alert('Link copied'); };
+
       shareEmail.href = `mailto:?subject=${encodeURIComponent('Pledge for ' + cityName)}&body=${encodeURIComponent(msg + ' ' + url)}`;
       openPopup();
     }
@@ -389,6 +398,8 @@ if (vol) vol.href = './volunteer.html';
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap"></script>
 </body>
 </html>
+
+
 
 
 
