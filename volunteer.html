@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Volunteer — Municipality Address Check</title>
+  <link href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap" rel="stylesheet" />
+  <style>
+    :root{ --green:#22c55e; --green-700:#16a34a; --border:#e5e7eb; --muted:#f3f4f6; --ink:#111827; --error:#b91c1c; }
+    *{box-sizing:border-box}
+    body{ font-family:Lato,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; align-items:center; background:#f4f4f9; color:var(--ink); }
+    .header-wrapper{ display:flex; align-items:center; justify-content:space-between; width:92%; max-width:420px; margin:12px auto 0; }
+    .back-link{ text-decoration:none; color:#111; font-size:13px; padding:8px 10px; border-radius:9999px; background:#fff; border:1px solid var(--border); }
+    .back-link:hover{ background:var(--muted); }
+    h1{ font-size:16px; font-weight:700; width:92%; max-width:420px; margin:10px auto 6px; }
+    .sub{ font-size:13px; width:92%; max-width:420px; margin:0 auto 10px; color:#4b5563; }
+    .card{ width:92%; max-width:420px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px; box-shadow:0 4px 10px rgba(0,0,0,.04); }
+    .row{ display:grid; grid-template-columns:1fr; gap:6px; margin-bottom:10px; }
+    .row label{ font-size:14px; font-weight:700; }
+    .input, select, textarea{ width:100%; padding:12px; border:1px solid #ccc; border-radius:8px; font-size:14px; }
+    .input:focus, select:focus, textarea:focus{ outline:none; border-color:#0073e6; }
+    .hint{ font-size:12px; color:#6b7280; }
+    .checkboxes, .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+    .chip{ padding:8px 10px; border:1px solid #ccc; border-radius:9999px; font-size:13px; cursor:pointer; background:#fff; }
+    .chip input{ display:none; }
+    .chip.active{ background:#e6f6ee; border-color:#9fe3be; }
+    .consent{ display:flex; gap:8px; align-items:flex-start; }
+    .button{ width:100%; padding:12px 20px; font-size:14px; background:var(--green); color:#fff; border:none; border-radius:10px; cursor:pointer; font-weight:700; }
+    .button:hover{ background:var(--green-700); }
+    .toast{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#111827; color:#fff; padding:10px 14px; border-radius:10px; font-size:13px; display:none; }
+  </style>
+</head>
+<body>
+  <div class="header-wrapper">
+    <a class="back-link" href="./boundary.html">← Back</a>
+    <div></div>
+  </div>
+
+  <h1>Volunteer</h1>
+  <div class="sub">Join the team and help us reach voters.</div>
+
+  <div class="card">
+    <form id="volForm" novalidate>
+      <div class="row">
+        <label for="vName">Full name</label>
+        <input id="vName" class="input" type="text" placeholder="Your name" required />
+      </div>
+
+      <div class="row">
+        <label for="vEmail">Email</label>
+        <input id="vEmail" class="input" type="email" placeholder="you@example.com" required />
+      </div>
+
+      <div class="row">
+        <label for="vPhone">Phone</label>
+        <input id="vPhone" class="input" type="tel" placeholder="(123) 456-7890" inputmode="tel" />
+        <div class="hint">Optional, but helps coordinators reach you quickly.</div>
+      </div>
+
+      <div class="row">
+        <label for="vCity">City</label>
+        <select id="vCity">
+          <option value="Homestead">Homestead</option>
+          <option value="Florida City">Florida City</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label>How would you like to help?</label>
+        <div class="chips" id="roles">
+          <label class="chip"><input type="checkbox" value="Door Knocking">Door Knocking</label>
+          <label class="chip"><input type="checkbox" value="Phone Banking">Phone Banking</label>
+          <label class="chip"><input type="checkbox" value="Yard Sign">Yard Sign</label>
+          <label class="chip"><input type="checkbox" value="Events">Events</label>
+          <label class="chip"><input type="checkbox" value="Data Entry">Data Entry</label>
+        </div>
+      </div>
+
+      <div class="row">
+        <label>Availability</label>
+        <div class="chips" id="avail">
+          <label class="chip"><input type="checkbox" value="Weekdays">Weekdays</label>
+          <label class="chip"><input type="checkbox" value="Weekends">Weekends</label>
+          <label class="chip"><input type="checkbox" value="Mornings">Mornings</label>
+          <label class="chip"><input type="checkbox" value="Afternoons">Afternoons</label>
+          <label class="chip"><input type="checkbox" value="Evenings">Evenings</label>
+        </div>
+      </div>
+
+      <div class="row">
+        <label>Preferred contact</label>
+        <div class="chips" id="contactPref">
+          <label class="chip"><input type="radio" name="contact" value="SMS">SMS</label>
+          <label class="chip"><input type="radio" name="contact" value="Email">Email</label>
+          <label class="chip"><input type="radio" name="contact" value="Phone">Phone</label>
+        </div>
+      </div>
+
+      <div class="row">
+        <label>Language</label>
+        <div class="chips" id="langPref">
+          <label class="chip"><input type="radio" name="lang" value="EN" checked>EN</label>
+          <label class="chip"><input type="radio" name="lang" value="ES">ES</label>
+          <label class="chip"><input type="radio" name="lang" value="HT">HT</label>
+        </div>
+      </div>
+
+      <div class="row">
+        <label for="vNotes">Notes</label>
+        <textarea id="vNotes" rows="3" placeholder="Anything else we should know?"></textarea>
+      </div>
+
+      <div class="row consent">
+        <input id="vConsent" type="checkbox" />
+        <label for="vConsent" style="font-weight:400;">I consent to be contacted by the campaign regarding volunteer opportunities. Msg & data rates may apply. Reply STOP to opt out.</label>
+      </div>
+
+      <button class="button" type="submit">Submit</button>
+    </form>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // Chip active styling
+    document.querySelectorAll('.chip').forEach(ch => {
+      ch.addEventListener('click', () => ch.classList.toggle('active'));
+    });
+
+    const form = document.getElementById('volForm');
+    const toast = document.getElementById('toast');
+
+    function toastMsg(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',2000); }
+
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const data = {
+        name: document.getElementById('vName').value.trim(),
+        email: document.getElementById('vEmail').value.trim(),
+        phone: document.getElementById('vPhone').value.trim(),
+        city: document.getElementById('vCity').value,
+        roles: [...document.querySelectorAll('#roles input:checked')].map(i=>i.value),
+        availability: [...document.querySelectorAll('#avail input:checked')].map(i=>i.value),
+        contact_pref: document.querySelector('#contactPref input:checked')?.value || null,
+        language: document.querySelector('#langPref input:checked')?.value || 'EN',
+        notes: document.getElementById('vNotes').value.trim(),
+        consent: document.getElementById('vConsent').checked,
+        created_at: new Date().toISOString()
+      };
+
+      if (!data.name || !data.email || !data.consent){
+        toastMsg('Please complete name, email, and consent.'); 
+        return;
+      }
+
+      // Save locally (so field leads aren’t lost offline)
+      const store = JSON.parse(localStorage.getItem('volunteers') || '[]');
+      store.push(data);
+      localStorage.setItem('volunteers', JSON.stringify(store));
+
+      // TODO: send to your backend or Google Sheet/Airtable
+      // await fetch('https://your.api/volunteers', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+
+      form.reset();
+      document.querySelectorAll('.chip.active').forEach(c=>c.classList.remove('active'));
+      toastMsg('Thanks for volunteering!');
+    });
+  </script>
+</body>
+</html>
