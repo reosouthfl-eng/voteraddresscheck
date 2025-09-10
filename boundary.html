@@ -20,15 +20,22 @@
     select, .row input { width: 100%; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; }
     .row input:focus, select:focus { outline: none; border: 1px solid #0073e6; }
     .row input.error { border-color: #d93025; }
-    .map-container { width: 92%; max-width: 420px; height: 420px; margin: 10px auto; border-radius: 12px; overflow:hidden; background:#e5e7eb; }
+
+    .map-container { width: 92%; max-width: 420px; height: 420px; margin: 10px auto; border-radius: 12px; overflow:hidden; background:#e5e7eb; position:relative; }
+    #legendChip{ position:absolute; top:8px; left:8px; background:#fff; border-radius:999px; padding:6px 10px; font-size:12px; box-shadow:0 1px 4px rgba(0,0,0,.12); }
+
     #result { margin-top: 10px; font-size: 14px; font-weight: bold; text-align: left; line-height: 1.6; padding: 10px; width: 92%; max-width: 420px; display: none; border-radius: 10px; margin: 10px auto; background: #ecfdf5; color: #065f46; }
     #result.outside { background: #fef2f2; color: #991b1b; }
+    #result .small { font-weight: normal; font-size: 12px; color: #374151; }
+
     .button-container { width: 92%; max-width: 420px; margin: 12px auto; text-align: center; }
     .button { width: 100%; padding: 12px 20px; font-size: 14px; background-color: #22c55e; color: white; border: none; border-radius: 10px; cursor: pointer; text-align: center; }
+
     .popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid #ccc; border-radius: 12px; text-align: left; width: 92%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.18); z-index: 1300; }
     .sharebar { display:flex; gap:8px; margin-top:10px; }
     .sharebar a { flex:1; text-align:center; text-decoration:none; color:#fff; padding:10px; border-radius:10px; font-size:13px; }
     .wa{background:#25D366} .sms{background:#111827} .copy{background:#6b7280} .email{background:#2563eb}
+
     .header-wrapper { display:flex; align-items:center; justify-content:space-between; width:92%; max-width:420px; margin:8px auto 0; }
     #hamburgerMenu { background:none; border:none; font-size:24px; cursor:pointer; color:#111; }
     #menuDropdown { display:none; position:absolute; right:4%; top:48px; background:#fff; border-radius:10px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,.15); min-width:230px; z-index:1000; }
@@ -37,7 +44,8 @@
     #menuDropdown li:last-child { border-bottom:0; }
     #menuDropdown a { display:block; padding:10px 12px; color:#111; text-decoration:none; border-radius:6px; }
     #menuDropdown a:hover { background:#f3f4f6; }
-      /* Consent alignment fix (mobile-safe) */
+
+    /* Consent alignment fix (mobile-safe) */
     .consent-wrap{ width:92%; max-width:420px; margin:8px auto; display:flex; align-items:flex-start; gap:10px; }
     .consent-wrap input[type="checkbox"]{ margin-top:2px; flex:0 0 auto; }
     .consent-wrap label{ font-size:14px; font-weight:normal; line-height:1.35; text-align:left; flex:1 1 auto; }
@@ -71,6 +79,7 @@
   </div>
 
   <div class="map-container">
+    <div id="legendChip">City boundary</div>
     <div id="map-container" style="width:100%;height:100%"></div>
   </div>
 
@@ -101,6 +110,7 @@
     <button id="submitBtn" class="button">Pledge my support</button>
   </div>
 
+  <!-- Success/Share Popup -->
   <div id="thankYouPopup" class="popup" role="dialog" aria-modal="true">
     <h2>Thank You for Your Support!</h2>
     <p>Your commitment makes a difference! By pledging your support, you're helping shape the future of our community.</p>
@@ -121,7 +131,7 @@
   </div>
 
   <script>
-    // Hamburger menu toggle
+    // Hamburger menu
     (function(){
       const btn = document.getElementById('hamburgerMenu');
       const dd = document.getElementById('menuDropdown');
@@ -136,114 +146,241 @@
       });
     })();
 
+    // --- Map + Boundaries ---
     let map, autocomplete, marker, geocoder;
     let boundaryGeoJSON = null;
+    const cityCache = {};
+    const polygons = {};
 
     const citySelect = document.getElementById('citySelect');
     const addressInput = document.getElementById('addressInput');
     const resultEl = document.getElementById('result');
     const popup = document.getElementById('thankYouPopup');
     const closePopup = document.getElementById('closePopup');
+    const shareWa = document.getElementById('shareWa');
+    const shareSms = document.getElementById('shareSms');
+    const shareCopy = document.getElementById('shareCopy');
     const shareEmail = document.getElementById('shareEmail');
+    const legendChip = document.getElementById('legendChip');
 
     const CITY_CONFIG = {
-      homestead: { name:'Homestead', file:'./homestead_boundary.geojson' },
-      floridacity: { name:'Florida City', file:'./floridacity_boundary.geojson' }
+      homestead:   { name:'Homestead',    file:'./homestead_boundary.geojson',   center:{lat:25.4687,lng:-80.4776}, style:{stroke:'#ef4444', fill:'#ef4444'} },
+      floridacity: { name:'Florida City', file:'./floridacity_boundary.geojson', center:{lat:25.4477,lng:-80.4809}, style:{stroke:'#0ea5e9', fill:'#0ea5e9'} }
     };
 
+    function toLatLng(path){ return path.map(([lng, lat]) => ({ lat, lng })); }
+
     async function loadBoundary(city){
+      if (cityCache[city]) return cityCache[city];
       const cfg = CITY_CONFIG[city];
-      const res = await fetch(cfg.file);
+      const res = await fetch(cfg.file, { cache:'no-store' });
       const raw = await res.json();
       let feature = raw.type==='FeatureCollection'? raw.features[0] : raw;
+      cityCache[city] = feature;
       return feature;
+    }
+
+    function drawPolygonForCity(city){
+      // Clear any existing polygon
+      if (polygons[city]) { polygons[city].setMap(null); delete polygons[city]; }
+      const feature = cityCache[city]; if (!feature) return;
+      const g = feature.geometry;
+      const cfg = CITY_CONFIG[city];
+
+      const add = (coords) => {
+        const latlngRings = coords.map(r => toLatLng(r));
+        const poly = new google.maps.Polygon({
+          paths: latlngRings,
+          strokeColor: cfg.style.stroke, strokeOpacity: 1, strokeWeight: 2,
+          fillColor: cfg.style.fill, fillOpacity: 0.18
+        });
+        poly.setMap(map);
+        polygons[city] = poly;
+      };
+
+      if (g.type === 'Polygon') add(g.coordinates);
+      else if (g.type === 'MultiPolygon') g.coordinates.forEach(add);
+    }
+
+    function fitBoundsToFeature(feature){
+      const bounds = new google.maps.LatLngBounds();
+      const g = feature.geometry;
+      const add = (coords) => { toLatLng(coords[0]).forEach(pt => bounds.extend(pt)); };
+      if (g.type === 'Polygon') add(g.coordinates);
+      else if (g.type === 'MultiPolygon') g.coordinates.forEach(add);
+      if (!bounds.isEmpty()) map.fitBounds(bounds);
     }
 
     function pointInPolygon(latLng, feature){
       const pt = turf.point([latLng.lng(), latLng.lat()]);
       const g = feature.geometry;
-      if(g.type==='Polygon') return turf.booleanPointInPolygon(pt, turf.polygon(g.coordinates));
-      if(g.type==='MultiPolygon') return turf.booleanPointInPolygon(pt, turf.multiPolygon(g.coordinates));
+      if(g.type==='Polygon') return turf.booleanPointInPolygon(pt, turf.polygon(g.coordinates), {ignoreBoundary:false});
+      if(g.type==='MultiPolygon') return turf.booleanPointInPolygon(pt, turf.multiPolygon(g.coordinates), {ignoreBoundary:false});
       return false;
     }
 
-    function showResult(isInside, cityName){
-      resultEl.style.display='block';
-      resultEl.classList.toggle('outside', !isInside);
-      resultEl.textContent = isInside? `✔ Address is inside ${cityName}` : `❌ Address is not within ${cityName}`;
+    function outsideCTA(cityName, otherCityDetected, otherCityKey){
+      const otherText = otherCityDetected
+        ? `<div class="small">This address appears to be in <strong>${CITY_CONFIG[otherCityKey].name}</strong>. <a href="#" id="switchCityLink">Switch to ${CITY_CONFIG[otherCityKey].name}</a>.</div>`
+        : '';
+      return `
+        <div><strong>No — this address is not within ${cityName}.</strong></div>
+        ${otherText}
+        <ul style="margin:8px 0 6px 18px; padding:0; font-weight:normal;">
+          <li><strong>Know 2 people in ${cityName}?</strong> Share this page with them now.</li>
+          <li><strong>Get involved:</strong> help with door-knocking, phone banks, or events.</li>
+        </ul>
+        <div class="sharebar" id="sharebarOutside">
+          <a href="#" class="wa" id="shareWaOut">WhatsApp</a>
+          <a href="#" class="sms" id="shareSmsOut">SMS</a>
+          <a href="#" class="copy" id="shareCopyOut">Copy link</a>
+          <a href="#" class="email" id="shareEmailOut">Email</a>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <a href="#" id="volunteerLink" style="flex:1; text-decoration:none; display:inline-block; padding:10px 14px; border-radius:10px; text-align:center; background:#22c55e; color:#fff;">Volunteer</a>
+          <a href="https://www.vote.org/register-to-vote/" target="_blank" style="flex:1; text-decoration:none; display:inline-block; padding:10px 14px; border-radius:10px; text-align:center; background:#2563eb; color:#fff;">Get updates</a>
+        </div>
+      `;
     }
 
+    function wireOutsideShare(cityName){
+      const msg = `I just checked my address. If you live in ${cityName}, can you pledge your support?`;
+      const url = location.href.split('#')[0];
+      const wa = document.getElementById('shareWaOut');
+      const sms = document.getElementById('shareSmsOut');
+      const cp = document.getElementById('shareCopyOut');
+      const em = document.getElementById('shareEmailOut');
+      if (!wa || !sms || !cp || !em) return;
+      wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg+' '+url)}`;
+      sms.href = `sms:?&body=${encodeURIComponent(msg+' '+url)}`;
+      cp.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(`${msg} ${url}`); alert('Link copied'); };
+      em.href = `mailto:?subject=${encodeURIComponent('Support ' + cityName)}&body=${encodeURIComponent(msg+' '+url)}`;
+      // volunteer link placeholder (replace with your real form)
+      const vol = document.getElementById('volunteerLink');
+      if (vol) vol.href = 'https://example.com/volunteer'; // TODO: replace with your volunteer form
+    }
+
+    function showInside(cityName){
+      resultEl.style.display='block';
+      resultEl.classList.remove('outside');
+      resultEl.innerHTML = `
+        <div><strong>Yes! Your address is in ${cityName}.</strong></div>
+        <div class="small">Please answer the questions below the map.</div>
+      `;
+    }
+
+    function showOutside(cityName, otherCityDetected=false, otherCityKey=null){
+      resultEl.style.display='block';
+      resultEl.classList.add('outside');
+      resultEl.innerHTML = outsideCTA(cityName, otherCityDetected, otherCityKey);
+      wireOutsideShare(cityName);
+      // Optional: allow switching when we detect it's in the other city
+      if (otherCityDetected){
+        const link = document.getElementById('switchCityLink');
+        if (link){
+          link.addEventListener('click', async (e)=>{
+            e.preventDefault();
+            citySelect.value = otherCityKey;
+            await renderForCity(otherCityKey);
+            resultEl.style.display='none';
+          });
+        }
+      }
+    }
+
+    async function renderForCity(city, {fit=true}={}){
+      const feature = await loadBoundary(city);
+      boundaryGeoJSON = feature;
+      drawPolygonForCity(city);
+      legendChip.textContent = `${CITY_CONFIG[city].name} boundary`;
+      // remove the other city's overlay if present
+      const other = (city === 'homestead') ? 'floridacity' : 'homestead';
+      if (polygons[other]) { polygons[other].setMap(null); delete polygons[other]; }
+      if (fit) fitBoundsToFeature(feature);
+    }
+
+    function displayResults(latLng){
+      if (!boundaryGeoJSON) return;
+      const selected = citySelect.value;
+      const other = selected === 'homestead' ? 'floridacity' : 'homestead';
+
+      const inSelected = pointInPolygon(latLng, cityCache[selected]);
+      if (inSelected){
+        showInside(CITY_CONFIG[selected].name);
+      } else {
+        // Also check the other city to help the user
+        (async ()=>{
+          const otherFeat = await loadBoundary(other);
+          const inOther = pointInPolygon(latLng, otherFeat);
+          if (inOther){
+            showOutside(CITY_CONFIG[selected].name, true, other);
+          } else {
+            showOutside(CITY_CONFIG[selected].name, false, null);
+          }
+        })();
+      }
+
+      if (!marker) marker = new google.maps.Marker({ position: latLng, map, title: 'Checked address' });
+      else marker.setPosition(latLng);
+      map.setCenter(latLng);
+      map.setZoom(15);
+    }
+
+    // Share popup (used after pledge)
     function openPopup(){ popup.style.display = 'block'; }
     closePopup.addEventListener('click', ()=> popup.style.display='none');
-
     function openShare(){
       const cityName = CITY_CONFIG[citySelect.value].name;
       const msg = `Pledge your support if you live in ${cityName}:`;
       const url = location.href.split('#')[0];
-      shareEmail.href = `mailto:?subject=Pledge%20for%20${cityName}&body=${encodeURIComponent(msg + ' ' + url)}`;
-      popup.style.display='block';
+      shareWa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg + ' ' + url)}`;
+      shareSms.href = `sms:?&body=${encodeURIComponent(msg + ' ' + url)}`;
+      shareCopy.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(`${msg} ${url}`); alert('Link copied'); };
+      shareEmail.href = `mailto:?subject=${encodeURIComponent('Pledge for ' + cityName)}&body=${encodeURIComponent(msg + ' ' + url)}`;
+      openPopup();
     }
+    document.getElementById('submitBtn').addEventListener('click', openShare);
 
-    document.getElementById('submitBtn').addEventListener('click', ()=>{
-      openShare();
-    });
-
+    // Google Maps init
     async function initMap(){
       map = new google.maps.Map(document.getElementById('map-container'), {
-        center:{lat:25.4687,lng:-80.4776},zoom:13,mapTypeControl:false,streetViewControl:false
+        center:{lat:25.4687,lng:-80.4776}, zoom:13, mapTypeControl:false, streetViewControl:false
       });
       autocomplete = new google.maps.places.Autocomplete(addressInput, { types: ['address'], componentRestrictions:{ country:'us' } });
       geocoder = new google.maps.Geocoder();
 
-      // load initial boundary
-      boundaryGeoJSON = await loadBoundary(citySelect.value);
+      // Initial city boundary overlay
+      await renderForCity(citySelect.value);
 
       autocomplete.addListener('place_changed', async ()=>{
         const place = autocomplete.getPlace();
         if(place?.geometry){
-          if (!marker) marker = new google.maps.Marker({ position: place.geometry.location, map });
-          else marker.setPosition(place.geometry.location);
-          map.setCenter(place.geometry.location);
-          map.setZoom(15);
-          boundaryGeoJSON = await loadBoundary(citySelect.value);
-          const inside = pointInPolygon(place.geometry.location, boundaryGeoJSON);
-          showResult(inside, CITY_CONFIG[citySelect.value].name);
+          displayResults(place.geometry.location);
+        } else {
+          resultEl.style.display='block';
+          resultEl.classList.add('outside');
+          resultEl.textContent = 'No details available for that address.';
         }
       });
 
-      addressInput.addEventListener('keydown', async (e)=>{
-        if(e.key==='Enter'){
-          const place = autocomplete.getPlace();
-          if(place?.geometry){
-            if (!marker) marker = new google.maps.Marker({ position: place.geometry.location, map });
-            else marker.setPosition(place.geometry.location);
-            map.setCenter(place.geometry.location);
-            map.setZoom(15);
-            boundaryGeoJSON = await loadBoundary(citySelect.value);
-            const inside = pointInPolygon(place.geometry.location, boundaryGeoJSON);
-            showResult(inside, CITY_CONFIG[citySelect.value].name);
-          } else if(addressInput.value.trim()){
-            geocoder.geocode({ address: addressInput.value.trim(), componentRestrictions:{ country:'US' } }, async (results, status)=>{
-              if(status==='OK' && results[0]){
-                if (!marker) marker = new google.maps.Marker({ position: results[0].geometry.location, map });
-                else marker.setPosition(results[0].geometry.location);
-                map.setCenter(results[0].geometry.location);
-                map.setZoom(15);
-                boundaryGeoJSON = await loadBoundary(citySelect.value);
-                const inside = pointInPolygon(results[0].geometry.location, boundaryGeoJSON);
-                showResult(inside, CITY_CONFIG[citySelect.value].name);
-              } else {
-                resultEl.style.display='block';
-                resultEl.classList.add('outside');
-                resultEl.textContent = 'Could not geocode that address. Please select from the suggestions.';
-              }
-            });
-          }
+      // Enter key fallback (geocode typed address)
+      addressInput.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter' && addressInput.value.trim()){
+          geocoder.geocode({ address: addressInput.value.trim(), componentRestrictions:{ country:'US' } }, (results, status)=>{
+            if(status==='OK' && results[0]){
+              displayResults(results[0].geometry.location);
+            } else {
+              resultEl.style.display='block';
+              resultEl.classList.add('outside');
+              resultEl.textContent = 'Could not geocode that address. Please select from the suggestions.';
+            }
+          });
         }
       });
 
+      // City change → draw that boundary + refit
       citySelect.addEventListener('change', async ()=>{
-        boundaryGeoJSON = await loadBoundary(citySelect.value);
+        await renderForCity(citySelect.value);
         resultEl.style.display='none';
       });
     }
@@ -251,6 +388,8 @@
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap"></script>
 </body>
 </html>
+
+
 
 
 
