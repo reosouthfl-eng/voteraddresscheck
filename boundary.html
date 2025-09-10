@@ -21,7 +21,7 @@
     .row input:focus, select:focus { outline: none; border: 1px solid #0073e6; }
     .row input.error { border-color: #d93025; }
 
-    .map-container { width: 92%; max-width: 420px; height: 420px; margin: 10px auto; border-radius: 12px; overflow:hidden; background:#e5e7eb; position:relative; }
+    .map-container { width: 92%; max-width: 420px; height: 420px; margin: 10px auto; border-radius: 12px; overflow:hidden; background:#e5e7eb; position: relative; }
     #legendChip{ position:absolute; top:8px; left:8px; background:#fff; border-radius:999px; padding:6px 10px; font-size:12px; box-shadow:0 1px 4px rgba(0,0,0,.12); }
 
     #result { margin-top: 10px; font-size: 14px; font-weight: bold; text-align: left; line-height: 1.6; padding: 10px; width: 92%; max-width: 420px; display: none; border-radius: 10px; margin: 10px auto; background: #ecfdf5; color: #065f46; }
@@ -36,7 +36,7 @@
     .sharebar a { flex:1; text-align:center; text-decoration:none; color:#fff; padding:10px; border-radius:10px; font-size:13px; }
     .wa{background:#25D366} .sms{background:#111827} .copy{background:#6b7280} .email{background:#2563eb}
 
-    .header-wrapper { display:flex; align-items:center; justify-content:space-between; width:92%; max-width:420px; margin:8px auto 0; }
+    .header-wrapper { display:flex; align-items:center; justify-content:flex-end; width:92%; max-width:420px; margin:8px auto 0; }
     #hamburgerMenu { background:none; border:none; font-size:24px; cursor:pointer; color:#111; }
     #menuDropdown { display:none; position:absolute; right:4%; top:48px; background:#fff; border-radius:10px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,.15); min-width:230px; z-index:1000; }
     #menuDropdown ul { list-style:none; margin:0; padding:0; }
@@ -49,22 +49,20 @@
     .consent-wrap{ width:92%; max-width:420px; margin:8px auto; display:flex; align-items:flex-start; gap:10px; }
     .consent-wrap input[type="checkbox"]{ margin-top:2px; flex:0 0 auto; }
     .consent-wrap label{ font-size:14px; font-weight:normal; line-height:1.35; text-align:left; flex:1 1 auto; }
+      .linkbar { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+    .linkbar a { flex:1 1 48%; text-align:center; text-decoration:none; color:#111; background:#fff; border:1px solid #e5e7eb; padding:10px; border-radius:10px; font-size:13px; }
+    .linkbar a.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
+      .login-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:9999px;background:#f3f4f6;border:1px solid #e5e7eb;color:#0ea5e9;font-weight:700;font-size:13px;letter-spacing:.02em;text-decoration:none;line-height:1;}
+    .login-btn:hover{background:#e5e7eb;}
+    .login-btn:focus-visible{outline:2px solid #93c5fd; outline-offset:2px;}
+    .login-btn .arrow{font-size:14px;line-height:1;}
   </style>
 
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 </head>
 <body>
   <div class="header-wrapper">
-    <div style="height:24px;"></div>
-    <button id="hamburgerMenu" aria-label="Open menu">☰</button>
-  </div>
-  <div id="menuDropdown" role="menu" aria-hidden="true">
-    <ul>
-      <li><a href="https://registertovoteflorida.gov/home" target="_blank">✔ Check Voter Status</a></li>
-      <li><a href="https://www.vote.org/register-to-vote/" target="_blank">📝 Register to Vote</a></li>
-      <li><a href="https://www.miamidade.gov/global/elections/vote-by-mail.page" target="_blank">📩 Request Your Vote-by-Mail Ballot</a></li>
-      <li><a href="https://lkt.337.myftpupload.com/login" target="_blank">🔑 Login</a></li>
-    </ul>
+    <a href="https://lkt.337.myftpupload.com/login" target="_blank" rel="noopener" class="login-btn" aria-label="Log in">LOG IN <span class="arrow" aria-hidden="true">▸</span></a>
   </div>
 
   <h1 id="pageTitle">Check if Your Address is Within the Municipality</h1>
@@ -110,7 +108,6 @@
     <button id="submitBtn" class="button">Pledge my support</button>
   </div>
 
-  <!-- Success/Share Popup -->
   <div id="thankYouPopup" class="popup" role="dialog" aria-modal="true">
     <h2>Thank You for Your Support!</h2>
     <p>Your commitment makes a difference! By pledging your support, you're helping shape the future of our community.</p>
@@ -119,6 +116,14 @@
       <li>Renew/request your Vote-by-Mail ballot.</li>
       <li>Invite 2 friends who live in your city to pledge.</li>
     </ol>
+    <div style="margin-top:8px;">
+      <div class="small" style="margin-bottom:6px;">Voter tools</div>
+      <div class="linkbar">
+        <a class="primary" href="https://www.miamidade.gov/global/elections/vote-by-mail.page?utm_source=pledge_popup" target="_blank">📩 Request / Renew VBM</a>
+        <a href="https://registertovoteflorida.gov/home?utm_source=pledge_popup" target="_blank">✔ Check Voter Status</a>
+        <a href="https://www.vote.org/register-to-vote/?utm_source=pledge_popup" target="_blank">📝 Register to Vote</a>
+      </div>
+    </div>
     <div class="sharebar">
       <a href="#" class="wa" id="shareWa">WhatsApp</a>
       <a href="#" class="sms" id="shareSms">SMS</a>
@@ -131,10 +136,11 @@
   </div>
 
   <script>
-    // Hamburger menu
+    // Hamburger menu toggle
     (function(){
       const btn = document.getElementById('hamburgerMenu');
       const dd = document.getElementById('menuDropdown');
+      if(!btn || !dd) return;
       btn.addEventListener('click', (e)=>{
         e.stopPropagation();
         const open = dd.style.display === 'block';
@@ -181,12 +187,9 @@
     }
 
     function drawPolygonForCity(city){
-      // Clear any existing polygon
       if (polygons[city]) { polygons[city].setMap(null); delete polygons[city]; }
       const feature = cityCache[city]; if (!feature) return;
-      const g = feature.geometry;
-      const cfg = CITY_CONFIG[city];
-
+      const g = feature.geometry; const cfg = CITY_CONFIG[city];
       const add = (coords) => {
         const latlngRings = coords.map(r => toLatLng(r));
         const poly = new google.maps.Polygon({
@@ -197,7 +200,6 @@
         poly.setMap(map);
         polygons[city] = poly;
       };
-
       if (g.type === 'Polygon') add(g.coordinates);
       else if (g.type === 'MultiPolygon') g.coordinates.forEach(add);
     }
@@ -244,20 +246,22 @@
     }
 
     function wireOutsideShare(cityName){
+      // generate a simple referral code for tracking
+      const shortId = Math.random().toString(36).slice(2,8);
+      const base = location.href.split('#')[0];
+      const shareUrl = `${base}?ref=pledge-${shortId}`;
       const msg = `I just checked my address. If you live in ${cityName}, can you pledge your support?`;
-      const url = location.href.split('#')[0];
       const wa = document.getElementById('shareWaOut');
       const sms = document.getElementById('shareSmsOut');
       const cp = document.getElementById('shareCopyOut');
       const em = document.getElementById('shareEmailOut');
       if (!wa || !sms || !cp || !em) return;
-      wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg+' '+url)}`;
-      sms.href = `sms:?&body=${encodeURIComponent(msg+' '+url)}`;
-      cp.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(`${msg} ${url}`); alert('Link copied'); };
-      em.href = `mailto:?subject=${encodeURIComponent('Support ' + cityName)}&body=${encodeURIComponent(msg+' '+url)}`;
-      // volunteer link placeholder (replace with your real form)
+      wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg+' '+shareUrl)}`;
+      sms.href = `sms:?&body=${encodeURIComponent(msg+' '+shareUrl)}`;
+      cp.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(`${msg} ${shareUrl}`); alert('Link copied'); };
+      em.href = `mailto:?subject=${encodeURIComponent('Support ' + cityName)}&body=${encodeURIComponent(msg+' '+shareUrl)}`;
       const vol = document.getElementById('volunteerLink');
-      if (vol) vol.href = 'https://example.com/volunteer'; // TODO: replace with your volunteer form
+      if (vol) vol.href = 'https://example.com/volunteer'; // TODO: replace with your volunteer form URL
     }
 
     function showInside(cityName){
@@ -265,7 +269,7 @@
       resultEl.classList.remove('outside');
       resultEl.innerHTML = `
         <div><strong>Yes! Your address is in ${cityName}.</strong></div>
-        <div class="small">Please answer the questions below the map.</div>
+        <div class="small">Please answer the questions below.</div>
       `;
     }
 
@@ -274,7 +278,6 @@
       resultEl.classList.add('outside');
       resultEl.innerHTML = outsideCTA(cityName, otherCityDetected, otherCityKey);
       wireOutsideShare(cityName);
-      // Optional: allow switching when we detect it's in the other city
       if (otherCityDetected){
         const link = document.getElementById('switchCityLink');
         if (link){
@@ -293,7 +296,6 @@
       boundaryGeoJSON = feature;
       drawPolygonForCity(city);
       legendChip.textContent = `${CITY_CONFIG[city].name} boundary`;
-      // remove the other city's overlay if present
       const other = (city === 'homestead') ? 'floridacity' : 'homestead';
       if (polygons[other]) { polygons[other].setMap(null); delete polygons[other]; }
       if (fit) fitBoundsToFeature(feature);
@@ -303,12 +305,11 @@
       if (!boundaryGeoJSON) return;
       const selected = citySelect.value;
       const other = selected === 'homestead' ? 'floridacity' : 'homestead';
-
       const inSelected = pointInPolygon(latLng, cityCache[selected]);
+
       if (inSelected){
         showInside(CITY_CONFIG[selected].name);
       } else {
-        // Also check the other city to help the user
         (async ()=>{
           const otherFeat = await loadBoundary(other);
           const inOther = pointInPolygon(latLng, otherFeat);
@@ -326,7 +327,7 @@
       map.setZoom(15);
     }
 
-    // Share popup (used after pledge)
+    // Share popup (after pledge)
     function openPopup(){ popup.style.display = 'block'; }
     closePopup.addEventListener('click', ()=> popup.style.display='none');
     function openShare(){
@@ -363,7 +364,6 @@
         }
       });
 
-      // Enter key fallback (geocode typed address)
       addressInput.addEventListener('keydown', (e)=>{
         if(e.key==='Enter' && addressInput.value.trim()){
           geocoder.geocode({ address: addressInput.value.trim(), componentRestrictions:{ country:'US' } }, (results, status)=>{
@@ -378,7 +378,6 @@
         }
       });
 
-      // City change → draw that boundary + refit
       citySelect.addEventListener('change', async ()=>{
         await renderForCity(citySelect.value);
         resultEl.style.display='none';
@@ -388,6 +387,9 @@
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap"></script>
 </body>
 </html>
+
+
+
 
 
 
