@@ -245,31 +245,24 @@
       `;
     }
 
-    <script>
-  function wireOutsideShare(cityName){
-    // generate a simple referral code for tracking
-    const shortId = Math.random().toString(36).slice(2,8);
-    const base = location.href.split('#')[0];
-    const shareUrl = `${base}?ref=pledge-${shortId}`;
-    const msg = `I just checked my address. If you live in ${cityName}, can you pledge your support?`;
-
-    const wa = document.getElementById('shareWaOut');
-    const sms = document.getElementById('shareSmsOut');
-    const cp  = document.getElementById('shareCopyOut');
-    const em  = document.getElementById('shareEmailOut');
-
-    if (!wa || !sms || !cp || !em) return;
-
-    wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg+' '+shareUrl)}`;
-    sms.href = `sms:?&body=${encodeURIComponent(msg+' '+shareUrl)}`;
-    cp.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(`${msg} ${shareUrl}`); alert('Link copied'); };
-    em.href = `mailto:?subject=${encodeURIComponent('Support ' + cityName)}&body=${encodeURIComponent(msg+' '+shareUrl)}`;
-
-    // 👉 Set the Volunteer button to your new volunteer page
-    const vol = document.getElementById('volunteerLink');
-    if (vol) vol.href = './volunteer.html';
-  }
-</script>
+    function wireOutsideShare(cityName){
+      // generate a simple referral code for tracking
+      const shortId = Math.random().toString(36).slice(2,8);
+      const base = location.href.split('#')[0];
+      const shareUrl = `${base}?ref=pledge-${shortId}`;
+      const msg = `I just checked my address. If you live in ${cityName}, can you pledge your support?`;
+      const wa = document.getElementById('shareWaOut');
+      const sms = document.getElementById('shareSmsOut');
+      const cp = document.getElementById('shareCopyOut');
+      const em = document.getElementById('shareEmailOut');
+      if (!wa || !sms || !cp || !em) return;
+      wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg+' '+shareUrl)}`;
+      sms.href = `sms:?&body=${encodeURIComponent(msg+' '+shareUrl)}`;
+      cp.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(`${msg} ${shareUrl}`); alert('Link copied'); };
+      em.href = `mailto:?subject=${encodeURIComponent('Support ' + cityName)}&body=${encodeURIComponent(msg+' '+shareUrl)}`;
+      const vol = document.getElementById('volunteerLink');
+      if (vol) vol.href = 'https://example.com/volunteer'; // TODO: replace with your volunteer form URL
+    }
 
     function showInside(cityName){
       resultEl.style.display='block';
@@ -394,6 +387,31 @@
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
