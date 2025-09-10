@@ -3,110 +3,80 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>Campaign Team Login</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <title>Municipality Address Check — Team Login</title>
   <link href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap" rel="stylesheet" />
-
   <style>
-    :root{
-      --green: #22c55e;
-      --green-700:#16a34a;
-      --blue: #2563eb;
-      --ink: #111827;
-      --muted:#f3f4f6;
-      --border:#e5e7eb;
-      --error:#b91c1c;
-    }
-    *{ box-sizing: border-box; }
-    body { font-family: 'Lato', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; background-color: #f4f4f9; color: var(--ink); }
-    .header-wrapper { display:flex; align-items:center; justify-content:space-between; width:92%; max-width:420px; margin:14px auto 0; }
-    .back-link { text-decoration:none; color:#111; font-size:13px; padding:8px 10px; border-radius:9999px; background:#fff; border:1px solid var(--border); }
+    :root{ --green:#22c55e; --green-700:#16a34a; --border:#e5e7eb; --muted:#f3f4f6; --ink:#111827; --error:#b91c1c; }
+    *{box-sizing:border-box}
+    body{ font-family:Lato,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; align-items:center; background:#f4f4f9; color:var(--ink); }
+    .header-wrapper{ display:flex; align-items:center; justify-content:space-between; width:92%; max-width:420px; margin:12px auto 0; }
+    .back-link{ text-decoration:none; color:#111; font-size:13px; padding:8px 10px; border-radius:9999px; background:#fff; border:1px solid var(--border); }
     .back-link:hover{ background:var(--muted); }
-    h1 { font-size: 16px; font-weight: 700; text-align: left; width: 92%; max-width: 420px; margin: 10px auto 8px; }
-
-    .card { width:92%; max-width:420px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px; box-shadow:0 4px 10px rgba(0,0,0,.04); }
-    .row { display:grid; grid-template-columns: 1fr; gap:6px; margin-bottom:10px; }
-    .row label { font-size: 14px; font-weight: 700; }
-    .input { width:100%; padding:12px; border:1px solid #ccc; border-radius:8px; font-size:14px; }
-    .input:focus { outline: none; border-color: #0073e6; }
-    .input.error { border-color: var(--error); }
-    .hint { font-size:12px; color:#6b7280; }
-    .error-text { font-size:12px; color:var(--error); margin-top:-2px; }
-
-    .checkbox-row { display:flex; align-items:center; gap:8px; }
-    .checkbox-row input[type="checkbox"]{ width:18px; height:18px; }
-
-    .button { width: 100%; padding: 12px 20px; font-size: 14px; background-color: var(--green); color: white; border: none; border-radius: 10px; cursor: pointer; text-align: center; font-weight:700; }
-    .button:hover { background: var(--green-700); }
-    .button[disabled]{ opacity:.6; cursor:not-allowed; }
-
-    .button-secondary { width:100%; padding:12px 20px; font-size:14px; background:#fff; color:#111; border:1px solid var(--border); border-radius:10px; cursor:pointer; text-align:center; }
-    .button-secondary:hover { background: var(--muted); }
-
-    .links { display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
-    .links a { font-size:13px; color:#111; text-decoration:none; }
-    .links a:hover { text-decoration:underline; }
-
-    .foot-note { width:92%; max-width:420px; font-size:12px; color:#6b7280; margin:10px auto 24px; text-align:left; }
-
-    /* small toast for demo */
-    .toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#111827; color:#fff; padding:10px 14px; border-radius:10px; font-size:13px; display:none; }
+    h1{ font-size:16px; font-weight:700; width:92%; max-width:420px; margin:10px auto 0; }
+    .sub{ font-size:13px; width:92%; max-width:420px; margin:4px auto 10px; color:#4b5563; }
+    .card{ width:92%; max-width:420px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px; box-shadow:0 4px 10px rgba(0,0,0,.04); }
+    .row{ display:grid; grid-template-columns:1fr; gap:6px; margin-bottom:10px; }
+    .row label{ font-size:14px; font-weight:700; }
+    .input{ width:100%; padding:12px; border:1px solid #ccc; border-radius:8px; font-size:14px; }
+    .input:focus{ outline:none; border-color:#0073e6; }
+    .input.error{ border-color:var(--error); }
+    .error-text{ font-size:12px; color:var(--error); display:none; }
+    .checkbox-row{ display:flex; align-items:center; gap:8px; margin:8px 0 6px; }
+    .button{ width:100%; padding:12px 20px; font-size:14px; background:var(--green); color:#fff; border:none; border-radius:10px; cursor:pointer; font-weight:700; }
+    .button:hover{ background:var(--green-700); }
+    .links{ display:flex; justify-content:space-between; gap:6px; margin-top:10px; flex-wrap:wrap; }
+    .links a{ font-size:13px; color:#111; text-decoration:none; }
+    .links a:hover{ text-decoration:underline; }
+    .alt{ width:92%; max-width:420px; margin:10px auto 24px; font-size:12px; color:#6b7280; }
+    .toast{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#111827; color:#fff; padding:10px 14px; border-radius:10px; font-size:13px; display:none; }
   </style>
 </head>
 <body>
-
   <div class="header-wrapper">
     <a class="back-link" href="./boundary.html">← Back</a>
-    <!-- keep header clean on login page -->
     <div></div>
   </div>
 
-  <h1>Campaign Team Login</h1>
+  <h1>Municipality Address Check</h1>
+  <div class="sub">Team Login</div>
 
   <div class="card">
     <form id="loginForm" novalidate>
       <div class="row">
         <label for="email">Email</label>
-        <input id="email" name="email" class="input" type="email" placeholder="you@example.com" autocomplete="username" required />
-        <div id="emailErr" class="error-text" style="display:none;">Please enter a valid email.</div>
+        <input id="email" class="input" type="email" placeholder="you@example.com" autocomplete="username" required />
+        <div id="emailErr" class="error-text">Please enter a valid email.</div>
       </div>
 
       <div class="row">
         <label for="password">Password</label>
         <div style="position:relative;">
-          <input id="password" name="password" class="input" type="password" placeholder="Your password" autocomplete="current-password" required />
+          <input id="password" class="input" type="password" placeholder="Your password" autocomplete="current-password" required />
           <button type="button" id="togglePw" aria-label="Show password" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:12px; color:#111;">Show</button>
         </div>
-        <div id="pwErr" class="error-text" style="display:none;">Password must be at least 8 characters.</div>
+        <div id="pwErr" class="error-text">Password must be at least 8 characters.</div>
       </div>
 
-      <div class="checkbox-row" style="margin:8px 0 6px;">
+      <div class="checkbox-row">
         <input type="checkbox" id="remember" />
         <label for="remember" style="font-weight:400;">Remember me on this device</label>
       </div>
 
       <button id="signInBtn" class="button" type="submit">Sign in</button>
 
-      <div class="links">
-        <a id="forgotLink" href="#" onclick="alert('Link this to your reset flow or WordPress reset page.');return false;">Forgot password?</a>
-        <a id="needHelp" href="#" onclick="alert('Add a help link or mailto: for your team.');return false;">Need help?</a>
+      <div class="links" style="margin-top:12px;">
+        <a href="./register.html">Register</a>
+        <a href="./forgot-id.html">Forgot User ID</a>
+        <a href="./forgot-password.html">Forgot Password</a>
       </div>
-
-      <div style="margin:12px 0; text-align:center; font-size:12px; color:#6b7280;">or</div>
-
-      <!-- Keep current WordPress path for continuity -->
-      <a class="button-secondary" href="https://lkt.337.myftpupload.com/login" target="_blank" rel="noopener">Continue to Admin (WordPress)</a>
     </form>
   </div>
 
-  <p class="foot-note">By signing in you agree to keep campaign data confidential. If you don’t have access, contact the campaign administrator.</p>
+  <p class="alt">After you sign in, you can connect your social media accounts in <em>Settings → Connections</em> to streamline outreach.</p>
 
   <div id="toast" class="toast"></div>
 
   <script>
-    // Show/Hide password
     const pw = document.getElementById('password');
     const tgl = document.getElementById('togglePw');
     tgl.addEventListener('click', ()=>{
@@ -116,7 +86,6 @@
       tgl.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
     });
 
-    // Basic validation + submit stub
     const email = document.getElementById('email');
     const emailErr = document.getElementById('emailErr');
     const pwErr = document.getElementById('pwErr');
@@ -124,15 +93,8 @@
     const btn = document.getElementById('signInBtn');
     const toast = document.getElementById('toast');
 
-    function showToast(msg){
-      toast.textContent = msg;
-      toast.style.display = 'block';
-      setTimeout(()=> toast.style.display='none', 2000);
-    }
-
-    function isValidEmail(v){
-      return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v);
-    }
+    function toastMsg(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',2000); }
+    function validEmail(v){ return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v); }
 
     form.addEventListener('submit', async (e)=>{
       e.preventDefault();
@@ -140,31 +102,19 @@
       pw.classList.remove('error'); pwErr.style.display='none';
 
       let ok = true;
-      if (!isValidEmail(email.value.trim())) { email.classList.add('error'); emailErr.style.display='block'; ok = false; }
-      if ((pw.value || '').length < 8) { pw.classList.add('error'); pwErr.style.display='block'; ok = false; }
+      if (!validEmail(email.value.trim())) { email.classList.add('error'); emailErr.style.display='block'; ok = false; }
+      if ((pw.value||'').length < 8) { pw.classList.add('error'); pwErr.style.display='block'; ok = false; }
       if (!ok) return;
 
-      btn.disabled = true; btn.textContent = 'Signing in…';
-
-      try {
-        // TODO: hook to your backend auth if/when ready.
-        // Example:
-        // const res = await fetch('/auth/login', {
-        //   method:'POST',
-        //   headers:{'Content-Type':'application/json'},
-        //   body: JSON.stringify({ email: email.value.trim(), password: pw.value })
-        // });
-        // const data = await res.json();
-        // if (!res.ok) throw new Error(data?.error || 'Login failed');
-
-        // Demo success (remove when hooking real backend)
-        await new Promise(r => setTimeout(r, 700));
-        showToast('Signed in (demo)');
-        // window.location.href = '/dashboard.html';
-      } catch (err){
-        showToast(err.message || 'Login failed');
-      } finally {
-        btn.disabled = false; btn.textContent = 'Sign in';
+      btn.disabled=true; btn.textContent='Signing in…';
+      try{
+        // TODO: hook to your backend / WordPress if needed.
+        await new Promise(r=>setTimeout(r,700));
+        window.location.href = './connections.html'; // post-login landing (can change)
+      }catch(err){
+        toastMsg('Login failed'); 
+      }finally{
+        btn.disabled=false; btn.textContent='Sign in';
       }
     });
   </script>
