@@ -23,8 +23,6 @@
     .checkbox-row{ display:flex; align-items:flex-start; gap:8px; }
     .button{ width:100%; padding:12px 20px; font-size:14px; background:var(--green); color:#fff; border:none; border-radius:10px; cursor:pointer; font-weight:700; }
     .button:hover{ background:var(--green-700); }
-    .muted-btn{ width:100%; padding:10px 14px; background:#fff; border:1px solid var(--border); border-radius:10px; cursor:pointer; font-size:13px; }
-    .muted-btn:hover{ background:#f9fafb; }
     .two{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .progress{ background:#f3f4f6; border:1px solid var(--border); border-radius:9999px; height:12px; overflow:hidden; }
     .bar{ background:var(--green); height:100%; width:0%; transition:width .25s ease; }
@@ -109,9 +107,11 @@
           <input id="electionDate" class="input" type="date" />
         </div>
       </div>
+
+      <!-- Manager (replaces Treasurer) -->
       <div class="row">
-        <label for="treasurer">Campaign Manager (optional)</label>
-        <input id="treasurer" class="input" type="text" placeholder="Treasurer name" />
+        <label for="manager">Campaign manager (optional)</label>
+        <input id="manager" class="input" type="text" placeholder="Manager name" />
       </div>
 
       <!-- Goal + progress -->
@@ -134,7 +134,6 @@
 
       <button class="button" type="submit">Create account</button>
 
-      <!-- LINKS: trimmed to only Back to login -->
       <div class="links">
         <a href="./login.html">Back to login</a>
       </div>
@@ -198,20 +197,21 @@
         city: el('city').value,
         district: el('district').value.trim(),
         election_date: el('electionDate').value,
-        treasurer: el('treasurer').value.trim(),
+        manager: el('manager').value.trim(),               // <— manager field
         votes_goal: parseInt(votesGoal.value, 10)
       };
       localStorage.setItem('campaign_settings', JSON.stringify(cfg));
       localStorage.setItem('campaign_goal', String(cfg.votes_goal));
-      toastMsg('Account created (demo).');
+      // Make the registering user the Admin by default (demo)
+      localStorage.setItem('current_user', JSON.stringify({ email: cfg.email, role: 'Admin', name: cfg.full_name }));
 
       // TODO: send to backend; attach reCAPTCHA/hCaptcha token and client fingerprint if desired.
-      // const token = await grecaptcha.execute('SITE_KEY', {action:'register'});
-      // await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...cfg, token}) });
 
-      setTimeout(()=> window.location.href = './login.html', 800);
+      toastMsg('Account created.');
+      setTimeout(()=> window.location.href = './team.html', 700);  // go manage your team
     });
   </script>
 </body>
 </html>
+
 
