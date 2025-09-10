@@ -3,17 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>Municipality Address Check — Team Login</title>
+  <title>Municipality Address Check — Login</title>
   <link href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap" rel="stylesheet" />
   <style>
     :root{ --green:#22c55e; --green-700:#16a34a; --border:#e5e7eb; --muted:#f3f4f6; --ink:#111827; --error:#b91c1c; }
     *{box-sizing:border-box}
     body{ font-family:Lato,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; align-items:center; background:#f4f4f9; color:var(--ink); }
-    .header-wrapper{ display:flex; align-items:center; justify-content:space-between; width:92%; max-width:420px; margin:12px auto 0; }
+
+    /* header: align back link left (no spacer div) */
+    .header-wrapper{ display:flex; align-items:center; justify-content:flex-start; width:92%; max-width:420px; margin:12px auto 0; }
     .back-link{ text-decoration:none; color:#111; font-size:13px; padding:8px 10px; border-radius:9999px; background:#fff; border:1px solid var(--border); }
     .back-link:hover{ background:var(--muted); }
+
     h1{ font-size:16px; font-weight:700; width:92%; max-width:420px; margin:10px auto 0; }
-    .sub{ font-size:13px; width:92%; max-width:420px; margin:4px auto 10px; color:#4b5563; }
+
     .card{ width:92%; max-width:420px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px; box-shadow:0 4px 10px rgba(0,0,0,.04); }
     .row{ display:grid; grid-template-columns:1fr; gap:6px; margin-bottom:10px; }
     .row label{ font-size:14px; font-weight:700; }
@@ -21,24 +24,27 @@
     .input:focus{ outline:none; border-color:#0073e6; }
     .input.error{ border-color:var(--error); }
     .error-text{ font-size:12px; color:var(--error); display:none; }
+
     .checkbox-row{ display:flex; align-items:center; gap:8px; margin:8px 0 6px; }
+
     .button{ width:100%; padding:12px 20px; font-size:14px; background:var(--green); color:#fff; border:none; border-radius:10px; cursor:pointer; font-weight:700; }
     .button:hover{ background:var(--green-700); }
-    .links{ display:flex; justify-content:space-between; gap:6px; margin-top:10px; flex-wrap:wrap; }
-    .links a{ font-size:13px; color:#111; text-decoration:none; }
+
+    /* links row: don't stretch; wrap nicely */
+    .links{ display:flex; justify-content:flex-start; gap:12px; margin-top:12px; flex-wrap:wrap; }
+    .links a{ font-size:13px; color:#111; text-decoration:none; white-space:nowrap; }
     .links a:hover{ text-decoration:underline; }
-    .alt{ width:92%; max-width:420px; margin:10px auto 24px; font-size:12px; color:#6b7280; }
+
     .toast{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#111827; color:#fff; padding:10px 14px; border-radius:10px; font-size:13px; display:none; }
   </style>
 </head>
 <body>
   <div class="header-wrapper">
     <a class="back-link" href="./boundary.html">← Back</a>
-    <div></div>
   </div>
 
   <h1>Municipality Address Check</h1>
-  
+
   <div class="card">
     <form id="loginForm" novalidate>
       <div class="row">
@@ -63,7 +69,7 @@
 
       <button id="signInBtn" class="button" type="submit">Sign in</button>
 
-      <div class="links" style="margin-top:12px;">
+      <div class="links">
         <a href="./register.html">Register</a>
         <a href="./forgot-id.html">Forgot User ID</a>
         <a href="./forgot-password.html">Forgot Password</a>
@@ -71,7 +77,6 @@
     </form>
   </div>
 
-  
   <div id="toast" class="toast"></div>
 
   <script>
