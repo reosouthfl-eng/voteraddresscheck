@@ -262,7 +262,8 @@
       cp.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(`${msg} ${shareUrl}`); alert('Link copied'); };
       em.href = `mailto:?subject=${encodeURIComponent('Support ' + cityName)}&body=${encodeURIComponent(msg+' '+shareUrl)}`;
       const vol = document.getElementById('volunteerLink');
-      if (vol) vol.href = 'https://example.com/volunteer'; // TODO: replace with your volunteer form URL
+if (vol) vol.href = './volunteer.html';
+ // TODO: replace with your volunteer form URL
     }
 
     function showInside(cityName){
@@ -388,6 +389,7 @@
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap"></script>
 </body>
 </html>
+
 
 
 
