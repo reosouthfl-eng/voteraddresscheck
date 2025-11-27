@@ -434,25 +434,26 @@
         // email: emailInput ? emailInput.value.trim() : ''
       };
 
-            // For now, just log it so you can confirm it's structured correctly
+      // For now, just log it so you can confirm it's structured correctly
       console.log('Pledge payload ready:', payload);
 
-      // Send this to Google Sheets backend (Apps Script)
+      // 🔜 STEP 2: send this to Google Sheets backend (Apps Script)
+      /*
       try {
-        const resp = await fetch(API_URL, {
+        await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        const result = await resp.text();
-        console.log('Backend response:', result);
       } catch (err) {
         console.error('Error sending pledge:', err);
       }
+      */
 
       // Clear form & show thank-you popup
       pledgeForm.reset();
       openShare();
+    });
 
     // Google Maps init
     async function initMap(){
@@ -499,6 +500,7 @@
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap"></script>
 </body>
 </html>
+
 
 
 
