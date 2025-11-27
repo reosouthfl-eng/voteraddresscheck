@@ -87,30 +87,51 @@
 
   <div id="result" aria-live="polite"></div>
 
-  <div class="row">
-    <label for="nameInput">Enter your name:</label>
-    <input type="text" id="nameInput" placeholder="Your Name" />
-  </div>
-  <div class="row">
-    <label for="voterCountInput">How many voters at this address?</label>
-    <input type="number" id="voterCountInput" placeholder="Number of Voters" min="1" />
-  </div>
-  <div class="row">
-    <label for="phoneNumberInput">Enter your phone number:</label>
-    <input type="tel" id="phoneNumberInput" placeholder="(123) 456-7890" inputmode="tel" />
-  </div>
-  <div class="consent-wrap">
-    <input type="checkbox" id="consentInline" />
-    <label for="consentInline">I consent to having my name included in campaign materials</label>
-  </div>
-  <div class="row">
-    <label for="signatureInputMain">Your signature:</label>
-    <input type="text" id="signatureInputMain" placeholder="Type your full name here" />
-  </div>
+    <!-- PLEDGE FORM -->
+  <form id="pledgeForm" novalidate>
+    <!-- Hidden campaign ID (change per candidate) -->
+    <input type="hidden" id="campaignId" value="HOM-2025-01" />
 
-  <div class="button-container">
-    <button id="submitBtn" class="button">Pledge my support</button>
-  </div>
+    <div class="row">
+      <label for="nameInput">Enter your full name:</label>
+      <input type="text" id="nameInput" placeholder="Your Name" required />
+    </div>
+
+    <div class="row">
+      <label for="voterCountInput">How many registered voters live at this address?</label>
+      <input type="number" id="voterCountInput" placeholder="Number of Voters" min="1" required />
+    </div>
+
+    <div class="row">
+      <label for="phoneNumberInput">Enter your phone number (optional but helpful):</label>
+      <input type="tel" id="phoneNumberInput" placeholder="(123) 456-7890" inputmode="tel" />
+    </div>
+
+    <!-- Optional: email field if you want it later -->
+    <!--
+    <div class="row">
+      <label for="emailInput">Email (optional):</label>
+      <input type="email" id="emailInput" placeholder="you@example.com" />
+    </div>
+    -->
+
+    <div class="consent-wrap">
+      <input type="checkbox" id="consentInline" required />
+      <label for="consentInline">
+        I agree to be contacted by this campaign about elections and voting.
+      </label>
+    </div>
+
+    <div class="row">
+      <label for="signatureInputMain">Your signature:</label>
+      <input type="text" id="signatureInputMain" placeholder="Type your full name here" required />
+    </div>
+
+    <div class="button-container">
+      <button type="submit" id="submitBtn" class="button">Pledge my support</button>
+    </div>
+  </form>
+
 
   <div id="thankYouPopup" class="popup" role="dialog" aria-modal="true">
     <h2>Thank You for Your Support!</h2>
@@ -401,6 +422,7 @@
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap"></script>
 </body>
 </html>
+
 
 
 
