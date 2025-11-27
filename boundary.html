@@ -194,6 +194,20 @@
     const shareEmail = document.getElementById('shareEmail');
     const legendChip = document.getElementById('legendChip');
 
+        // Backend endpoint placeholder (we'll wire this in Step 2)
+    const API_URL = 'https://YOUR_WEB_APP_URL_HERE'; // TODO: replace later
+
+    // Pledge form elements
+    const pledgeForm = document.getElementById('pledgeForm');
+    const campaignIdInput = document.getElementById('campaignId');
+    const nameInput = document.getElementById('nameInput');
+    const voterCountInput = document.getElementById('voterCountInput');
+    const phoneNumberInput = document.getElementById('phoneNumberInput');
+    const consentInline = document.getElementById('consentInline');
+    const signatureInputMain = document.getElementById('signatureInputMain');
+    const submitBtn = document.getElementById('submitBtn');
+    // const emailInput = document.getElementById('emailInput'); // if you enable the email field
+
     const CITY_CONFIG = {
       homestead:   { name:'Homestead',    file:'./homestead_boundary.geojson',   center:{lat:25.4687,lng:-80.4776}, style:{stroke:'#ef4444', fill:'#ef4444'} },
       floridacity: { name:'Florida City', file:'./floridacity_boundary.geojson', center:{lat:25.4477,lng:-80.4809}, style:{stroke:'#0ea5e9', fill:'#0ea5e9'} }
@@ -375,7 +389,70 @@
       shareEmail.href = `mailto:?subject=${encodeURIComponent('Pledge for ' + cityName)}&body=${encodeURIComponent(msg + ' ' + url)}`;
       openPopup();
     }
-    document.getElementById('submitBtn').addEventListener('click', openShare);
+        // Handle pledge submission
+    pledgeForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Simple front-end validation
+      let hasError = false;
+      [nameInput, voterCountInput, signatureInputMain].forEach(input => {
+        if (input && !input.value.trim()) {
+          input.classList.add('error');
+          hasError = true;
+        } else if (input) {
+          input.classList.remove('error');
+        }
+      });
+
+      if (!consentInline.checked) {
+        hasError = true;
+        alert('Please confirm you agree to be contacted by the campaign.');
+      }
+
+      if (hasError) {
+        return;
+      }
+
+      // Build full address string from UI
+      const fullAddress = addressInput.value.trim();
+      const cityKey = citySelect.value;
+      const cityName = CITY_CONFIG[cityKey].name;
+
+      const payload = {
+        action: 'createPledge',
+        campaign_id: campaignIdInput.value,
+        supporter_full_name: nameInput.value.trim(),
+        full_address: fullAddress,
+        city_key: cityKey,
+        city_display: cityName,
+        voters_at_address: voterCountInput.value,
+        phone: phoneNumberInput.value.trim(),
+        consent: consentInline.checked,
+        signature: signatureInputMain.value.trim(),
+        source: 'Web form'
+        // email: emailInput ? emailInput.value.trim() : ''
+      };
+
+      // For now, just log it so you can confirm it's structured correctly
+      console.log('Pledge payload ready:', payload);
+
+      // 🔜 STEP 2: send this to Google Sheets backend (Apps Script)
+      /*
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.error('Error sending pledge:', err);
+      }
+      */
+
+      // Clear form & show thank-you popup
+      pledgeForm.reset();
+      openShare();
+    });
 
     // Google Maps init
     async function initMap(){
@@ -422,6 +499,7 @@
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap"></script>
 </body>
 </html>
+
 
 
 
