@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>Municipality Address Check</title>
+  <title>Voter Address Check – Pledge & District Tool</title>
 
   <link rel="preconnect" href="https://maps.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://maps.gstatic.com" crossorigin>
@@ -45,7 +45,6 @@
     #menuDropdown a { display:block; padding:10px 12px; color:#111; text-decoration:none; border-radius:6px; }
     #menuDropdown a:hover { background:#f3f4f6; }
 
-    /* Consent alignment fix (mobile-safe) */
     .consent-wrap{ width:92%; max-width:420px; margin:8px auto; display:flex; align-items:flex-start; gap:10px; }
     .consent-wrap input[type="checkbox"]{ margin-top:2px; flex:0 0 auto; }
     .consent-wrap label{ font-size:14px; font-weight:normal; line-height:1.35; text-align:left; flex:1 1 auto; }
@@ -53,7 +52,22 @@
     .linkbar { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
     .linkbar a { flex:1 1 48%; text-align:center; text-decoration:none; color:#111; background:#fff; border:1px solid #e5e7eb; padding:10px; border-radius:10px; font-size:13px; }
     .linkbar a.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
-      .login-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:9999px;background:#f3f4f6;border:1px solid #e5e7eb;color:#0ea5e9;font-weight:700;font-size:13px;letter-spacing:.02em;text-decoration:none;line-height:1;}
+
+    .login-btn{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 12px;
+      border-radius:9999px;
+      background:#f3f4f6;
+      border:1px solid #e5e7eb;
+      color:#0ea5e9;
+      font-weight:700;
+      font-size:13px;
+      letter-spacing:.02em;
+      text-decoration:none;
+      line-height:1;
+    }
     .login-btn:hover{background:#e5e7eb;}
     .login-btn:focus-visible{outline:2px solid #93c5fd; outline-offset:2px;}
     .login-btn .arrow{font-size:14px;line-height:1;}
@@ -63,21 +77,23 @@
 </head>
 <body>
   <div class="header-wrapper">
-    <a href="./login.html" class="login-btn" aria-label="Log in">
-  LOG IN <span class="arrow" aria-hidden="true">▸</span>
-</a>
-
+    <a href="https://lkt.337.myftpupload.com/login" target="_blank" rel="noopener" class="login-btn" aria-label="Log in">
+      LOG IN <span class="arrow" aria-hidden="true">▸</span>
+    </a>
   </div>
 
-  <h1 id="pageTitle">Check if Your Address is Within the Municipality</h1>
+  <h1 id="pageTitle">Are You in This City’s Voting Area?</h1>
+  <p id="pageSubtitle" style="width:92%;max-width:420px;margin:4px auto 10px;font-size:13px;line-height:1.4;color:#4b5563;">
+    Enter your home address to see if you can vote in this city, then pledge your support so the campaign can count you toward their win number.
+  </p>
 
   <div class="row">
-    <label for="citySelect">Select City:</label>
-    <select id="citySelect" aria-label="Select municipality">
+    <label for="citySelect">Select your city:</label>
+    <select id="citySelect" aria-label="Select city for address check">
       <option value="homestead" selected>Homestead</option>
       <option value="floridacity">Florida City</option>
     </select>
-    <input type="text" id="addressInput" placeholder="Enter address here" aria-label="Address" />
+    <input type="text" id="addressInput" placeholder="Enter your home address" aria-label="Home address" />
   </div>
 
   <div class="map-container">
@@ -87,60 +103,47 @@
 
   <div id="result" aria-live="polite"></div>
 
-    <!-- PLEDGE FORM -->
-  <form id="pledgeForm" novalidate>
-    <!-- Hidden campaign ID (change per candidate) -->
-    <input type="hidden" id="campaignId" value="HOM-2025-01" />
+  <div class="row">
+    <label for="nameInput">Your full name:</label>
+    <input type="text" id="nameInput" placeholder="First and last name" />
+  </div>
+  <div class="row">
+    <label for="voterCountInput">How many registered voters live in your household?</label>
+    <input type="number" id="voterCountInput" placeholder="Total registered voters here" min="1" />
+  </div>
+  <div class="row">
+    <label for="phoneNumberInput">Mobile number (for voting reminders – optional):</label>
+    <input type="tel" id="phoneNumberInput" placeholder="(optional)" inputmode="tel" />
+  </div>
+  <div class="consent-wrap">
+    <input type="checkbox" id="consentInline" />
+    <label for="consentInline">I agree to receive campaign updates and voting reminders by phone or text.</label>
+  </div>
+  <div class="row">
+    <label for="signatureInputMain">Your signature:</label>
+    <input type="text" id="signatureInputMain" placeholder="Type your full name here" />
+  </div>
 
-    <div class="row">
-      <label for="nameInput">Enter your full name:</label>
-      <input type="text" id="nameInput" placeholder="Your Name" required />
-    </div>
+  <div class="button-container">
+    <button id="submitBtn" class="button">Pledge my support and get reminders</button>
+  </div>
+  <div id="formError" style="width:92%;max-width:420px;margin:4px auto 0;font-size:12px;color:#b91c1c;display:none;"></div>
 
-    <div class="row">
-      <label for="voterCountInput">How many registered voters live at this address?</label>
-      <input type="number" id="voterCountInput" placeholder="Number of Voters" min="1" required />
-    </div>
-
-    <div class="row">
-      <label for="phoneNumberInput">Enter your phone number (optional but helpful):</label>
-      <input type="tel" id="phoneNumberInput" placeholder="(123) 456-7890" inputmode="tel" />
-    </div>
-
-    <!-- Optional: email field if you want it later -->
-    <!--
-    <div class="row">
-      <label for="emailInput">Email (optional):</label>
-      <input type="email" id="emailInput" placeholder="you@example.com" />
-    </div>
-    -->
-
-    <div class="consent-wrap">
-      <input type="checkbox" id="consentInline" required />
-      <label for="consentInline">
-        I agree to be contacted by this campaign about elections and voting.
-      </label>
-    </div>
-
-    <div class="row">
-      <label for="signatureInputMain">Your signature:</label>
-      <input type="text" id="signatureInputMain" placeholder="Type your full name here" required />
-    </div>
-
-    <div class="button-container">
-      <button type="submit" id="submitBtn" class="button">Pledge my support</button>
-    </div>
-  </form>
-
+  <div id="csvWrapper" style="width:92%;max-width:420px;margin:6px auto 0;display:none;text-align:right;">
+    <button id="downloadCsvBtn" style="background:none;border:none;color:#2563eb;font-size:12px;cursor:pointer;text-decoration:underline;padding:0;">
+      Download pledges (CSV)
+    </button>
+  </div>
 
   <div id="thankYouPopup" class="popup" role="dialog" aria-modal="true">
-    <h2>Thank You for Your Support!</h2>
-    <p>Your commitment makes a difference! By pledging your support, you're helping shape the future of our community.</p>
+    <h2>Thank you! You’re on the list.</h2>
+    <p>You’re now counted toward this campaign’s win number. We’ll send you important updates and reminders so you don’t miss your chance to vote.</p>
     <h3 style="margin:10px 0 6px;">Next steps</h3>
     <ol style="padding-left:18px; margin:6px 0;">
-      <li>Renew/request your Vote-by-Mail ballot.</li>
-      <li>Invite 2 friends who live in your city to pledge.</li>
+      <li>Request or renew your Vote-by-Mail ballot if you haven’t already.</li>
+      <li>Share this tool with 2 friends who live in your city and ask them to pledge.</li>
     </ol>
+
     <div style="margin-top:8px;">
       <div class="small" style="margin-bottom:6px;">Voter tools</div>
       <div class="linkbar">
@@ -173,7 +176,10 @@
         dd.setAttribute('aria-hidden', open ? 'true' : 'false');
       });
       document.addEventListener('click', (e)=>{
-        if (!dd.contains(e.target) && e.target !== btn){ dd.style.display='none'; dd.setAttribute('aria-hidden','true'); }
+        if (!dd.contains(e.target) && e.target !== btn){
+          dd.style.display='none';
+          dd.setAttribute('aria-hidden','true');
+        }
       });
     })();
 
@@ -194,25 +200,37 @@
     const shareEmail = document.getElementById('shareEmail');
     const legendChip = document.getElementById('legendChip');
 
-        // Backend endpoint placeholder (we'll wire this in Step 2)
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxYOURREALIDHERE/exec';
-
-
     // Pledge form elements
-    const pledgeForm = document.getElementById('pledgeForm');
-    const campaignIdInput = document.getElementById('campaignId');
     const nameInput = document.getElementById('nameInput');
     const voterCountInput = document.getElementById('voterCountInput');
     const phoneNumberInput = document.getElementById('phoneNumberInput');
     const consentInline = document.getElementById('consentInline');
-    const signatureInputMain = document.getElementById('signatureInputMain');
-    const submitBtn = document.getElementById('submitBtn');
-    // const emailInput = document.getElementById('emailInput'); // if you enable the email field
+    const signatureInput = document.getElementById('signatureInputMain');
+    const formError = document.getElementById('formError');
+    const csvWrapper = document.getElementById('csvWrapper');
+    const downloadCsvBtn = document.getElementById('downloadCsvBtn');
 
     const CITY_CONFIG = {
       homestead:   { name:'Homestead',    file:'./homestead_boundary.geojson',   center:{lat:25.4687,lng:-80.4776}, style:{stroke:'#ef4444', fill:'#ef4444'} },
       floridacity: { name:'Florida City', file:'./floridacity_boundary.geojson', center:{lat:25.4477,lng:-80.4809}, style:{stroke:'#0ea5e9', fill:'#0ea5e9'} }
     };
+
+    const SHEETS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzA6No5ywnQjdJAO5T8urtHgw3seEHn3AQmJSZMJAiVnAGKB8T5fzAmSrrxBGhpTJdiRA/exec';
+
+    // Load saved pledges (client-side backup)
+    let pledges = [];
+    try {
+      const stored = localStorage.getItem('pledges');
+      if (stored) pledges = JSON.parse(stored);
+    } catch (e) {
+      pledges = [];
+    }
+
+    function updateCsvVisibility() {
+      if (!csvWrapper) return;
+      csvWrapper.style.display = pledges.length > 0 ? 'block' : 'none';
+    }
+    updateCsvVisibility();
 
     function toLatLng(path){ return path.map(([lng, lat]) => ({ lat, lng })); }
 
@@ -227,9 +245,14 @@
     }
 
     function drawPolygonForCity(city){
-      if (polygons[city]) { polygons[city].setMap(null); delete polygons[city]; }
-      const feature = cityCache[city]; if (!feature) return;
-      const g = feature.geometry; const cfg = CITY_CONFIG[city];
+      if (polygons[city]) {
+        polygons[city].setMap(null);
+        delete polygons[city];
+      }
+      const feature = cityCache[city];
+      if (!feature) return;
+      const g = feature.geometry;
+      const cfg = CITY_CONFIG[city];
       const add = (coords) => {
         const latlngRings = coords.map(r => toLatLng(r));
         const poly = new google.maps.Polygon({
@@ -266,8 +289,11 @@
         ? `<div class="small">This address appears to be in <strong>${CITY_CONFIG[otherCityKey].name}</strong>. <a href="#" id="switchCityLink">Switch to ${CITY_CONFIG[otherCityKey].name}</a>.</div>`
         : '';
       return `
-        <div><strong>No — this address is not within ${cityName}.</strong></div>
+        <div><strong>Your address is not inside ${cityName} city limits.</strong></div>
         ${otherText}
+        <div class="small" style="margin-top:4px;">
+          You won’t see this race on your ballot, but you can still help the campaign grow its support.
+        </div>
         <ul style="margin:8px 0 6px 18px; padding:0; font-weight:normal;">
           <li><strong>Know 2 people in ${cityName}?</strong> Share this page with them now.</li>
           <li><strong>Get involved:</strong> help with door-knocking, phone banks, or events.</li>
@@ -286,7 +312,6 @@
     }
 
     function wireOutsideShare(cityName){
-      // generate a simple referral code for tracking
       const shortId = Math.random().toString(36).slice(2,8);
       const base = location.href.split('#')[0];
       const shareUrl = `${base}?ref=pledge-${shortId}`;
@@ -301,13 +326,12 @@
       wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg+' '+shareUrl)}`;
       sms.href = `sms:?&body=${encodeURIComponent(msg+' '+shareUrl)}`;
 
-      // ⬇️ Copy button: ONLY the URL
       cp.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(shareUrl); alert('Link copied'); };
 
       em.href = `mailto:?subject=${encodeURIComponent('Support ' + cityName)}&body=${encodeURIComponent(msg+' '+shareUrl)}`;
 
       const vol = document.getElementById('volunteerLink');
-      if (vol) vol.href = 'https://example.com/volunteer'; // TODO: replace with your volunteer form URL
+      if (vol) vol.href = 'https://example.com/volunteer'; // replace with real volunteer URL
     }
 
     function showInside(cityName){
@@ -315,7 +339,9 @@
       resultEl.classList.remove('outside');
       resultEl.innerHTML = `
         <div><strong>Yes! Your address is in ${cityName}.</strong></div>
-        <div class="small">Please answer the questions below the map.</div>
+        <div class="small">
+          You can vote in this race. Please complete the pledge form below so the campaign can count you toward their win number and send you voting reminders.
+        </div>
       `;
     }
 
@@ -343,7 +369,10 @@
       drawPolygonForCity(city);
       legendChip.textContent = `${CITY_CONFIG[city].name} boundary`;
       const other = (city === 'homestead') ? 'floridacity' : 'homestead';
-      if (polygons[other]) { polygons[other].setMap(null); delete polygons[other]; }
+      if (polygons[other]) {
+        polygons[other].setMap(null);
+        delete polygons[other];
+      }
       if (fit) fitBoundsToFeature(feature);
     }
 
@@ -373,9 +402,109 @@
       map.setZoom(15);
     }
 
-    // Share popup (after pledge)
-    function openPopup(){ popup.style.display = 'block'; }
+    function clearErrors() {
+      formError.style.display = 'none';
+      formError.textContent = '';
+      [nameInput, voterCountInput, phoneNumberInput, addressInput].forEach(el => {
+        if (!el) return;
+        el.classList.remove('error');
+      });
+    }
+
+    function validateForm() {
+      if (!addressInput.value.trim() || resultEl.style.display === 'none') {
+        addressInput.classList.add('error');
+        return 'Please check your home address on the map before pledging.';
+      }
+
+      if (!nameInput.value.trim()) {
+        nameInput.classList.add('error');
+        return 'Please enter your full name.';
+      }
+
+      const voters = parseInt(voterCountInput.value, 10);
+      if (!voters || voters < 1) {
+        voterCountInput.classList.add('error');
+        return 'Please enter how many registered voters live in your household.';
+      }
+
+      if (!consentInline.checked) {
+        return 'Please check the box to agree to receive campaign updates and voting reminders.';
+      }
+
+      return '';
+    }
+
+    function pledgesToCsv() {
+      const headers = [
+        'timestamp',
+        'campaign_id',
+        'supporter_full_name',
+        'full_address',
+        'city_key',
+        'city_display',
+        'voters_at_address',
+        'phone',
+        'consent',
+        'signature',
+        'source'
+      ];
+
+      const rows = pledges.map(p => [
+        p.timestamp,
+        p.campaign_id,
+        p.supporter_full_name,
+        p.full_address,
+        p.city_key,
+        p.city_display,
+        p.voters_at_address,
+        p.phone,
+        p.consent ? 'yes' : 'no',
+        p.signature,
+        p.source
+      ]);
+
+      const allRows = [headers, ...rows];
+
+      return allRows
+        .map(row =>
+          row
+            .map(value => {
+              const s = String(value ?? '');
+              const escaped = s.replace(/"/g, '""');
+              return `"${escaped}"`;
+            })
+            .join(',')
+        )
+        .join('\r\n');
+    }
+
+    if (downloadCsvBtn) {
+      downloadCsvBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!pledges.length) {
+          alert('No pledges to download yet.');
+          return;
+        }
+
+        const csv = pledgesToCsv();
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g, '-');
+        link.download = `pledges-${ts}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      });
+    }
+
+        // Share popup (after pledge)
+        function openPopup(){ popup.style.display = 'block'; }
     closePopup.addEventListener('click', ()=> popup.style.display='none');
+
     function openShare(){
       const cityName = CITY_CONFIG[citySelect.value].name;
       const msg = `Pledge your support if you live in ${cityName}:`;
@@ -384,74 +513,67 @@
       shareWa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg + ' ' + url)}`;
       shareSms.href = `sms:?&body=${encodeURIComponent(msg + ' ' + url)}`;
 
-      // ⬇️ Copy button: ONLY the URL
       shareCopy.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(url); alert('Link copied'); };
 
       shareEmail.href = `mailto:?subject=${encodeURIComponent('Pledge for ' + cityName)}&body=${encodeURIComponent(msg + ' ' + url)}`;
       openPopup();
     }
-        // Handle pledge submission
-    pledgeForm.addEventListener('submit', async (e) => {
+
+    // 🔹 Submit handler
+    document.getElementById('submitBtn').addEventListener('click', (e) => {
       e.preventDefault();
-
-      // Simple front-end validation
-      let hasError = false;
-      [nameInput, voterCountInput, signatureInputMain].forEach(input => {
-        if (input && !input.value.trim()) {
-          input.classList.add('error');
-          hasError = true;
-        } else if (input) {
-          input.classList.remove('error');
-        }
-      });
-
-      if (!consentInline.checked) {
-        hasError = true;
-        alert('Please confirm you agree to be contacted by the campaign.');
-      }
-
-      if (hasError) {
+      clearErrors();
+      const err = validateForm();
+      if (err) {
+        formError.textContent = err;
+        formError.style.display = 'block';
+        console.log('Validation error:', err);
         return;
       }
 
-      // Build full address string from UI
-      const fullAddress = addressInput.value.trim();
-      const cityKey = citySelect.value;
-      const cityName = CITY_CONFIG[cityKey].name;
+      const voters = parseInt(voterCountInput.value, 10) || 0;
 
-      const payload = {
-        action: 'createPledge',
-        campaign_id: campaignIdInput.value,
+      const pledge = {
+        timestamp: new Date().toISOString(),
+        campaign_id: 'homestead_2025_demo',
         supporter_full_name: nameInput.value.trim(),
-        full_address: fullAddress,
-        city_key: cityKey,
-        city_display: cityName,
-        voters_at_address: voterCountInput.value,
+        full_address: addressInput.value.trim(),
+        city_key: citySelect.value,
+        city_display: CITY_CONFIG[citySelect.value].name,
+        voters_at_address: voters,
         phone: phoneNumberInput.value.trim(),
-        consent: consentInline.checked,
-        signature: signatureInputMain.value.trim(),
-        source: 'Web form'
-        // email: emailInput ? emailInput.value.trim() : ''
+        consent: !!consentInline.checked,
+        signature: signatureInput.value.trim(),
+        source: 'web:boundary_form_v1'
       };
 
-      // For now, just log it so you can confirm it's structured correctly
-      console.log('Pledge payload ready:', payload);
+      console.log('Pledge being sent:', pledge);
 
-      // 🔜 STEP 2: send this to Google Sheets backend (Apps Script)
-      /*
+      // Local backup for CSV
+      pledges.push(pledge);
       try {
-        await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      } catch (err) {
-        console.error('Error sending pledge:', err);
+        localStorage.setItem('pledges', JSON.stringify(pledges));
+      } catch (e) {
+        console.warn('Could not save pledges to localStorage', e);
       }
-      */
+      updateCsvVisibility();
 
-      // Clear form & show thank-you popup
-      pledgeForm.reset();
+      // 🔹 Send to Google Sheets (fire-and-forget, CORS-safe)
+      if (SHEETS_ENDPOINT) {
+        fetch(SHEETS_ENDPOINT, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(pledge)
+        })
+        .then(() => {
+          console.log('Pledge sent to Sheets (no-cors). Check sheet for new row.');
+        })
+        .catch(err => {
+          console.warn('Error sending pledge to Sheets:', err);
+        });
+      }
+
       openShare();
     });
 
@@ -497,9 +619,11 @@
       });
     }
   </script>
+
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap"></script>
 </body>
 </html>
+
 
 
 
