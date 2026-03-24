@@ -9,395 +9,911 @@
   <link rel="preconnect" href="https://maps.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <link href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet" />
 
   <style>
-    body { font-family: 'Lato', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; background-color: #f4f4f9; }
-    h1 { font-size: 14px; font-weight: bold; text-align: left; width: 92%; max-width: 420px; margin: 6px auto; }
-    .row { width: 92%; max-width: 420px; margin: 8px auto; display: grid; grid-template-columns: 1fr; gap: 8px; }
-    .row label { font-size: 14px; font-weight: bold; }
-    select, .row input { width: 100%; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; }
-    .row input:focus, select:focus { outline: none; border: 1px solid #0073e6; }
-    .row input.error { border-color: #d93025; }
-
-    .map-container { width: 92%; max-width: 420px; height: 420px; margin: 10px auto; border-radius: 12px; overflow:hidden; background:#e5e7eb; position: relative; }
-    #legendChip{ position:absolute; top:8px; left:8px; background:#fff; border-radius:999px; padding:6px 10px; font-size:12px; box-shadow:0 1px 4px rgba(0,0,0,.12); }
-
-    #result { margin-top: 10px; font-size: 14px; font-weight: bold; text-align: left; line-height: 1.6; padding: 10px; width: 92%; max-width: 420px; display: none; border-radius: 10px; margin: 10px auto; background: #ecfdf5; color: #065f46; }
-    #result.outside { background: #fef2f2; color: #991b1b; }
-    #result .small { font-weight: normal; font-size: 12px; color: #374151; }
-
-    .button-container { width: 92%; max-width: 420px; margin: 12px auto; text-align: center; }
-    .button { width: 100%; padding: 12px 20px; font-size: 14px; background-color: #22c55e; color: white; border: none; border-radius: 10px; cursor: pointer; text-align: center; }
-
-    .popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid #ccc; border-radius: 12px; text-align: left; width: 92%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.18); z-index: 1300; }
-    .sharebar { display:flex; gap:8px; margin-top:10px; }
-    .sharebar a { flex:1; text-align:center; text-decoration:none; color:#fff; padding:10px; border-radius:10px; font-size:13px; }
-    .wa{background:#25D366} .sms{background:#111827} .copy{background:#6b7280} .email{background:#2563eb}
-
-    .header-wrapper { display:flex; align-items:center; justify-content:flex-end; width:92%; max-width:420px; margin:8px auto 0; }
-    #hamburgerMenu { background:none; border:none; font-size:24px; cursor:pointer; color:#111; }
-    #menuDropdown { display:none; position:absolute; right:4%; top:48px; background:#fff; border-radius:10px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,.15); min-width:230px; z-index:1000; }
-    #menuDropdown ul { list-style:none; margin:0; padding:0; }
-    #menuDropdown li { border-bottom:1px solid #e5e7eb; }
-    #menuDropdown li:last-child { border-bottom:0; }
-    #menuDropdown a { display:block; padding:10px 12px; color:#111; text-decoration:none; border-radius:6px; }
-    #menuDropdown a:hover { background:#f3f4f6; }
-
-    .consent-wrap{ width:92%; max-width:420px; margin:8px auto; display:flex; align-items:flex-start; gap:10px; }
-    .consent-wrap input[type="checkbox"]{ margin-top:2px; flex:0 0 auto; }
-    .consent-wrap label{ font-size:14px; font-weight:normal; line-height:1.35; text-align:left; flex:1 1 auto; }
-
-    .linkbar { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
-    .linkbar a { flex:1 1 48%; text-align:center; text-decoration:none; color:#111; background:#fff; border:1px solid #e5e7eb; padding:10px; border-radius:10px; font-size:13px; }
-    .linkbar a.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
-
-    .login-btn{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:6px 12px;
-      border-radius:9999px;
-      background:#f3f4f6;
-      border:1px solid #e5e7eb;
-      color:#0ea5e9;
-      font-weight:700;
-      font-size:13px;
-      letter-spacing:.02em;
-      text-decoration:none;
-      line-height:1;
+    :root {
+      --green: #16a34a;
+      --green-light: #dcfce7;
+      --red: #dc2626;
+      --red-light: #fef2f2;
+      --blue: #2563eb;
+      --navy: #1e293b;
+      --gold: #fbbf24;
+      --gray-100: #f4f4f9;
+      --gray-200: #e5e7eb;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
     }
-    .login-btn:hover{background:#e5e7eb;}
-    .login-btn:focus-visible{outline:2px solid #93c5fd; outline-offset:2px;}
-    .login-btn .arrow{font-size:14px;line-height:1;}
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Lato', sans-serif;
+      margin: 0;
+      padding: 0 0 110px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--gray-100);
+    }
+
+    .header-wrapper {
+      width: 100%;
+      background: var(--navy);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+    }
+
+    .header-title {
+      color: #fff;
+      font-family: 'Merriweather', serif;
+      font-size: 13px;
+      letter-spacing: .02em;
+      margin: 0;
+    }
+
+    .login-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      color: #7dd3fc;
+      font-weight: 700;
+      font-size: 12px;
+      text-decoration: none;
+      transition: background .2s;
+    }
+
+    .login-btn:hover {
+      background: rgba(255,255,255,.2);
+    }
+
+    .hero {
+      width: 100%;
+      background: linear-gradient(135deg,#1e3a5f 0%,#1e293b 100%);
+      padding: 20px 16px 18px;
+      text-align: center;
+    }
+
+    .hero-name {
+      font-family: 'Merriweather', serif;
+      font-size: 22px;
+      color: #fff;
+      margin: 0 0 4px;
+    }
+
+    .hero-name span {
+      color: var(--gold);
+    }
+
+    .hero-sub {
+      font-size: 13px;
+      color: #94a3b8;
+      margin: 0 0 14px;
+      line-height: 1.5;
+    }
+
+    .progress-wrap {
+      width: 92%;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 5px;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      color: #cbd5e1;
+      font-weight: 700;
+    }
+
+    .progress-count {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 12px;
+      background: rgba(255,255,255,.15);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg,#22c55e,var(--gold));
+      border-radius: 9999px;
+      width: 0%;
+      transition: width 1.2s cubic-bezier(.4,0,.2,1);
+    }
+
+    .progress-goal {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .voter-tools-card {
+      width: 100%;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      padding: 16px 18px;
+      border-left: 4px solid var(--blue);
+    }
+
+    .vtc-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .vtc-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .voter-tools-card h3 {
+      font-family: 'Merriweather', serif;
+      font-size: 13px;
+      margin: 0;
+      color: var(--navy);
+    }
+
+    .voter-tools-card p {
+      font-size: 12px;
+      color: var(--gray-500);
+      margin: 0 0 10px;
+      line-height: 1.4;
+    }
+
+    .vtc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .vtc-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      text-decoration: none;
+      padding: 10px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.3;
+      transition: transform .15s, box-shadow .15s;
+    }
+
+    .vtc-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    }
+
+    .vtc-btn .vtc-emoji {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    .vtc-btn.vbm {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1.5px solid #bfdbfe;
+      grid-column: 1 / -1;
+      flex-direction: row;
+      gap: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+    }
+
+    .vtc-btn.vbm .vtc-emoji {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .vtc-btn.status {
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1.5px solid #bbf7d0;
+    }
+
+    .vtc-btn.register {
+      background: #fefce8;
+      color: #a16207;
+      border: 1.5px solid #fde68a;
+    }
+
+    .form-card {
+      width: 92%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      padding: 18px;
+      margin: 14px auto 0;
+    }
+
+    .form-card h2 {
+      font-family: 'Merriweather', serif;
+      font-size: 15px;
+      margin: 0 0 4px;
+      color: var(--navy);
+    }
+
+    .form-card > p {
+      font-size: 13px;
+      color: var(--gray-500);
+      margin: 0 0 14px;
+      line-height: 1.5;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .row label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gray-700);
+    }
+
+    .row input,
+    .row select {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      font-family: 'Lato', sans-serif;
+      background: #fafafa;
+      transition: border-color .2s;
+    }
+
+    .row input:focus,
+    .row select:focus {
+      outline: none;
+      border-color: var(--blue);
+      background: #fff;
+    }
+
+    .row input.error {
+      border-color: var(--red);
+      background: #fff5f5;
+    }
+
+    .map-container {
+      width: 100%;
+      height: 300px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--gray-200);
+      position: relative;
+      margin: 4px 0 12px;
+    }
+
+    #legendChip {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: #fff;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 11px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.15);
+      z-index: 10;
+      font-weight: 700;
+    }
+
+    #result {
+      display: none;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.6;
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      background: var(--green-light);
+      color: #065f46;
+    }
+
+    #result.outside {
+      background: var(--red-light);
+      color: #991b1b;
+    }
+
+    #result .small {
+      font-weight: normal;
+      font-size: 12px;
+      color: var(--gray-700);
+    }
+
+    .consent-wrap {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .consent-wrap input[type="checkbox"] {
+      margin-top: 3px;
+      flex: 0 0 auto;
+    }
+
+    .consent-wrap label {
+      font-size: 13px;
+      font-weight: normal;
+      line-height: 1.4;
+      color: var(--gray-700);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      background: linear-gradient(135deg,#16a34a,#15803d);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      letter-spacing: .02em;
+      box-shadow: 0 3px 10px rgba(22,163,74,.35);
+      transition: transform .15s, box-shadow .15s;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 14px rgba(22,163,74,.4);
+    }
+
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    .btn-submit:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    #formError {
+      font-size: 12px;
+      color: var(--red);
+      margin: 6px 0 0;
+      display: none;
+      padding: 8px 12px;
+      background: #fef2f2;
+      border-radius: 8px;
+      border-left: 3px solid var(--red);
+    }
+
+    #csvWrapper {
+      margin: 8px 0 0;
+      text-align: right;
+    }
+
+    #downloadCsvBtn {
+      background: none;
+      border: none;
+      color: var(--blue);
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+
+    #supabaseStatus {
+      font-size: 11px;
+      color: var(--gray-500);
+      margin-top: 4px;
+      display: none;
+      text-align: right;
+    }
+
+    #postPledgeReveal {
+      display: none;
+      margin-top: 20px;
+      animation: fadeSlideIn .5s ease forwards;
+    }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .ppr-share-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin: 14px 0 6px;
+    }
+
+    .sharebar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .sharebar a {
+      flex: 1 1 calc(50% - 4px);
+      text-align: center;
+      text-decoration: none;
+      color: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .wa { background: #25D366; }
+    .sms { background: #111827; }
+    .copy { background: #6b7280; }
+    .email { background: #2563eb; }
+
+    #stickyBar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1d4ed8;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      box-shadow: 0 -3px 12px rgba(0,0,0,.2);
+      z-index: 900;
+      transform: translateY(0);
+      transition: transform .35s ease;
+    }
+
+    #stickyBar.hidden {
+      transform: translateY(110%);
+    }
+
+    .sticky-text {
+      color: #fff;
+      font-size: 12px;
+      line-height: 1.35;
+      flex: 1;
+    }
+
+    .sticky-text strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 1px;
+    }
+
+    .sticky-vbm-btn {
+      white-space: nowrap;
+      padding: 9px 14px;
+      background: var(--gold);
+      color: #111;
+      border: none;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      margin-left: 12px;
+      transition: background .2s;
+    }
+
+    .sticky-vbm-btn:hover {
+      background: #f59e0b;
+    }
+
+    #stickyClose {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,.6);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0 0 0 10px;
+      line-height: 1;
+    }
   </style>
 
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
+
   <div class="header-wrapper">
-    <a href="https://lkt.337.myftpupload.com/login" target="_blank" rel="noopener" class="login-btn" aria-label="Log in">
-      LOG IN <span class="arrow" aria-hidden="true">▸</span>
-    </a>
+    <p class="header-title">Julio Guzman for Mayor</p>
+    <a href="https://lkt.337.myftpupload.com/login" target="_blank" rel="noopener" class="login-btn">LOG IN <span aria-hidden="true">▸</span></a>
   </div>
 
-  <h1 id="pageTitle">Are You in This City’s Voting Area?</h1>
-  <p id="pageSubtitle" style="width:92%;max-width:420px;margin:4px auto 10px;font-size:13px;line-height:1.4;color:#4b5563;">
-    Enter your home address to see if you can vote in this city, then pledge your support so the campaign can count you toward their win number.
-  </p>
-
-  <div class="row">
-    <label for="citySelect">Select your city:</label>
-    <select id="citySelect" aria-label="Select city for address check">
-      <option value="homestead" selected>Homestead</option>
-      <option value="floridacity">Florida City</option>
-    </select>
-    <input type="text" id="addressInput" placeholder="Enter your home address" aria-label="Home address" />
+  <div class="hero">
+    <h1 class="hero-name">Help <span>Julio Guzman</span> reach the ballot</h1>
+    <p class="hero-sub">Sign the petition to qualify for the mayoral ballot.<br>Goal: <strong style="color:var(--gold)">3,500 signatures</strong></p>
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">SIGNATURES SO FAR</span>
+        <span class="progress-count" id="pledgeCountDisplay">—</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-goal">Goal: 3,500</div>
+    </div>
   </div>
 
-  <div class="map-container">
-    <div id="legendChip">City boundary</div>
-    <div id="map-container" style="width:100%;height:100%"></div>
-  </div>
+  <div class="form-card">
+    <h2>Are You in This City's Voting Area?</h2>
+    <p>Enter your home address to see if you can vote in this city, then sign the petition to help Julio Guzman qualify for the mayoral ballot.</p>
 
-  <div id="result" aria-live="polite"></div>
+    <div class="row">
+      <label for="citySelect">Select your city:</label>
+      <select id="citySelect">
+        <option value="homestead" selected>Homestead</option>
+        <option value="floridacity">Florida City</option>
+      </select>
+    </div>
 
-  <div class="row">
-    <label for="nameInput">Your full name:</label>
-    <input type="text" id="nameInput" placeholder="First and last name" />
-  </div>
-  <div class="row">
-    <label for="voterCountInput">How many registered voters live in your household?</label>
-    <input type="number" id="voterCountInput" placeholder="Total registered voters here" min="1" />
-  </div>
-  <div class="row">
-    <label for="phoneNumberInput">Mobile number (for voting reminders – optional):</label>
-    <input type="tel" id="phoneNumberInput" placeholder="(optional)" inputmode="tel" />
-  </div>
-  <div class="consent-wrap">
-    <input type="checkbox" id="consentInline" />
-    <label for="consentInline">I agree to receive campaign updates and voting reminders by phone or text.</label>
-  </div>
-  <div class="row">
-    <label for="signatureInputMain">Your signature:</label>
-    <input type="text" id="signatureInputMain" placeholder="Type your full name here" />
-  </div>
+    <div class="row">
+      <label for="addressInput">Your home address: <span style="color:var(--red)">*</span></label>
+      <input type="text" id="addressInput" placeholder="Enter your home address" />
+    </div>
 
-  <div class="button-container">
-    <button id="submitBtn" class="button">Pledge my support and get reminders</button>
-  </div>
-  <div id="formError" style="width:92%;max-width:420px;margin:4px auto 0;font-size:12px;color:#b91c1c;display:none;"></div>
+    <div class="map-container">
+      <div id="legendChip">City boundary</div>
+      <div id="map-container" style="width:100%;height:100%"></div>
+    </div>
 
-  <div id="csvWrapper" style="width:92%;max-width:420px;margin:6px auto 0;display:none;text-align:right;">
-    <button id="downloadCsvBtn" style="background:none;border:none;color:#2563eb;font-size:12px;cursor:pointer;text-decoration:underline;padding:0;">
-      Download pledges (CSV)
-    </button>
-  </div>
+    <div id="result" aria-live="polite"></div>
 
-  <div id="thankYouPopup" class="popup" role="dialog" aria-modal="true">
-    <h2>Thank you! You’re on the list.</h2>
-    <p>You’re now counted toward this campaign’s win number. We’ll send you important updates and reminders so you don’t miss your chance to vote.</p>
-    <h3 style="margin:10px 0 6px;">Next steps</h3>
-    <ol style="padding-left:18px; margin:6px 0;">
-      <li>Request or renew your Vote-by-Mail ballot if you haven’t already.</li>
-      <li>Share this tool with 2 friends who live in your city and ask them to pledge.</li>
-    </ol>
+    <div class="row">
+      <label for="nameInput">Full name: <span style="color:var(--red)">*</span></label>
+      <input type="text" id="nameInput" placeholder="First and last name" />
+    </div>
 
-    <div style="margin-top:8px;">
-      <div class="small" style="margin-bottom:6px;">Voter tools</div>
-      <div class="linkbar">
-        <a class="primary" href="https://www.miamidade.gov/global/elections/vote-by-mail.page?utm_source=pledge_popup" target="_blank">📩 Request / Renew VBM</a>
-        <a href="https://registertovoteflorida.gov/home?utm_source=pledge_popup" target="_blank">✔ Check Voter Status</a>
-        <a href="https://www.vote.org/register-to-vote/?utm_source=pledge_popup" target="_blank">📝 Register to Vote</a>
+    <div class="row">
+      <label for="emailInput">Email address: <span style="color:var(--red)">*</span></label>
+      <input type="email" id="emailInput" placeholder="you@example.com" inputmode="email" />
+    </div>
+
+    <div class="row">
+      <label for="phoneNumberInput">Mobile number: <span style="color:var(--red)">*</span></label>
+      <input type="tel" id="phoneNumberInput" placeholder="(305) 555-0000" inputmode="tel" />
+    </div>
+
+    <div class="row">
+      <label for="voterCountInput">Registered voters in your household: <span style="color:var(--red)">*</span></label>
+      <input type="number" id="voterCountInput" placeholder="e.g. 2" min="1" />
+    </div>
+
+    <div class="consent-wrap">
+      <input type="checkbox" id="consentInline" />
+      <label for="consentInline">I agree to receive campaign updates and voting reminders from the Julio Guzman for Mayor campaign by phone, text, or email.</label>
+    </div>
+
+    <div class="row">
+      <label for="signatureInputMain">Your signature (type your full name): <span style="color:var(--red)">*</span></label>
+      <input type="text" id="signatureInputMain" placeholder="Type your full name to sign" />
+    </div>
+
+    <button id="submitBtn" class="btn-submit">✍️ Sign the Petition &amp; Help Julio Reach 3,500</button>
+    <div id="formError"></div>
+    <div id="supabaseStatus"></div>
+    <div id="csvWrapper" style="display:none;"><button id="downloadCsvBtn">Download pledges (CSV)</button></div>
+
+    <div id="postPledgeReveal" class="voter-tools-card">
+      <div class="vtc-header">
+        <span class="vtc-icon">🗳️</span>
+        <h3>Make sure your vote counts</h3>
+      </div>
+
+      <p>Already registered? Request your mail-in ballot now — it's the easiest way to make sure your vote is counted for Julio.</p>
+
+      <div class="vtc-grid">
+        <a class="vtc-btn vbm"
+           href="https://www.miamidade.gov/global/elections/vote-by-mail.page?utm_source=post_pledge"
+           target="_blank" rel="noopener">
+          <span class="vtc-emoji">📩</span>
+          <span>Request / Renew Your<br>Vote-by-Mail Ballot</span>
+        </a>
+
+        <a class="vtc-btn status"
+           href="https://registertovoteflorida.gov/home?utm_source=post_pledge"
+           target="_blank" rel="noopener">
+          <span class="vtc-emoji">✔️</span>
+          <span>Check Voter Status</span>
+        </a>
+
+        <a class="vtc-btn register"
+           href="https://www.vote.org/register-to-vote/?utm_source=post_pledge"
+           target="_blank" rel="noopener">
+          <span class="vtc-emoji">📝</span>
+          <span>Register to Vote</span>
+        </a>
+      </div>
+
+      <div class="ppr-share-label">Now share with 2 friends in your city:</div>
+      <div class="sharebar">
+        <a href="#" class="wa" id="shareWa">WhatsApp</a>
+        <a href="#" class="sms" id="shareSms">SMS</a>
+        <a href="#" class="copy" id="shareCopy">Copy link</a>
+        <a href="#" class="email" id="shareEmail">Email</a>
       </div>
     </div>
-    <div class="sharebar">
-      <a href="#" class="wa" id="shareWa">WhatsApp</a>
-      <a href="#" class="sms" id="shareSms">SMS</a>
-      <a href="#" class="copy" id="shareCopy">Copy link</a>
-      <a href="#" class="email" id="shareEmail">Email</a>
+  </div>
+
+  <div id="stickyBar">
+    <div class="sticky-text">
+      <strong>📩 Already registered to vote?</strong>
+      Request your mail-in ballot — takes 2 minutes.
     </div>
-    <div style="margin-top:12px;display:flex;gap:8px;">
-      <button class="button" id="closePopup">Close</button>
-    </div>
+    <a class="sticky-vbm-btn"
+       href="https://www.miamidade.gov/global/elections/vote-by-mail.page?utm_source=sticky_bar"
+       target="_blank" rel="noopener">Request Ballot →</a>
+    <button id="stickyClose" aria-label="Dismiss">✕</button>
   </div>
 
   <script>
-    // Hamburger menu toggle (safe if elements not present)
-    (function(){
-      const btn = document.getElementById('hamburgerMenu');
-      const dd = document.getElementById('menuDropdown');
-      if(!btn || !dd) return;
-      btn.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        const open = dd.style.display === 'block';
-        dd.style.display = open ? 'none' : 'block';
-        dd.setAttribute('aria-hidden', open ? 'true' : 'false');
-      });
-      document.addEventListener('click', (e)=>{
-        if (!dd.contains(e.target) && e.target !== btn){
-          dd.style.display='none';
-          dd.setAttribute('aria-hidden','true');
-        }
-      });
-    })();
+    const SUPABASE_URL      = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    const TABLE_NAME        = 'pledges';
+    const MANUAL_FLOOR      = 142;
+    const GOAL              = 3500;
+    const SHEETS_ENDPOINT   = 'https://script.google.com/macros/s/AKfycbzA6No5ywnQjdJAO5T8urtHgw3seEHn3AQmJSZMJAiVnAGKB8T5fzAmSrrxBGhpTJdiRA/exec';
 
-    // --- Map + Boundaries ---
+    let supabase = null;
+    try {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch (e) {}
+
+    async function loadProgress() {
+      let dbCount = 0;
+
+      if (supabase && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+        try {
+          const { count, error } = await supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true });
+          if (!error) dbCount = count || 0;
+        } catch (e) {}
+      }
+
+      const total = MANUAL_FLOOR + dbCount;
+      document.getElementById('pledgeCountDisplay').textContent = total.toLocaleString();
+
+      setTimeout(() => {
+        document.getElementById('progressFill').style.width = Math.min((total / GOAL) * 100, 100) + '%';
+      }, 200);
+    }
+
+    loadProgress();
+
+    const stickyBar = document.getElementById('stickyBar');
+    document.getElementById('stickyClose').addEventListener('click', () => stickyBar.classList.add('hidden'));
+
+    const citySelect        = document.getElementById('citySelect');
+    const addressInput      = document.getElementById('addressInput');
+    const resultEl          = document.getElementById('result');
+    const legendChip        = document.getElementById('legendChip');
+    const nameInput         = document.getElementById('nameInput');
+    const emailInput        = document.getElementById('emailInput');
+    const voterCountInput   = document.getElementById('voterCountInput');
+    const phoneNumberInput  = document.getElementById('phoneNumberInput');
+    const consentInline     = document.getElementById('consentInline');
+    const signatureInput    = document.getElementById('signatureInputMain');
+    const formError         = document.getElementById('formError');
+    const csvWrapper        = document.getElementById('csvWrapper');
+    const downloadCsvBtn    = document.getElementById('downloadCsvBtn');
+    const supabaseStatus    = document.getElementById('supabaseStatus');
+    const postPledgeReveal  = document.getElementById('postPledgeReveal');
+    const shareWa           = document.getElementById('shareWa');
+    const shareSms          = document.getElementById('shareSms');
+    const shareCopy         = document.getElementById('shareCopy');
+    const shareEmail        = document.getElementById('shareEmail');
+
+    const CITY_CONFIG = {
+      homestead: {
+        name: 'Homestead',
+        file: './homestead_boundary.geojson',
+        center: { lat: 25.4687, lng: -80.4776 }
+      },
+      floridacity: {
+        name: 'Florida City',
+        file: './floridacity_boundary.geojson',
+        center: { lat: 25.4477, lng: -80.4809 }
+      }
+    };
+
     let map, autocomplete, marker, geocoder;
     let boundaryGeoJSON = null;
     const cityCache = {};
     const polygons = {};
+    let currentBoundaryStatus = null;
 
-    const citySelect = document.getElementById('citySelect');
-    const addressInput = document.getElementById('addressInput');
-    const resultEl = document.getElementById('result');
-    const popup = document.getElementById('thankYouPopup');
-    const closePopup = document.getElementById('closePopup');
-    const shareWa = document.getElementById('shareWa');
-    const shareSms = document.getElementById('shareSms');
-    const shareCopy = document.getElementById('shareCopy');
-    const shareEmail = document.getElementById('shareEmail');
-    const legendChip = document.getElementById('legendChip');
-
-    // Pledge form elements
-    const nameInput = document.getElementById('nameInput');
-    const voterCountInput = document.getElementById('voterCountInput');
-    const phoneNumberInput = document.getElementById('phoneNumberInput');
-    const consentInline = document.getElementById('consentInline');
-    const signatureInput = document.getElementById('signatureInputMain');
-    const formError = document.getElementById('formError');
-    const csvWrapper = document.getElementById('csvWrapper');
-    const downloadCsvBtn = document.getElementById('downloadCsvBtn');
-
-    const CITY_CONFIG = {
-      homestead:   { name:'Homestead',    file:'./homestead_boundary.geojson',   center:{lat:25.4687,lng:-80.4776}, style:{stroke:'#ef4444', fill:'#ef4444'} },
-      floridacity: { name:'Florida City', file:'./floridacity_boundary.geojson', center:{lat:25.4477,lng:-80.4809}, style:{stroke:'#0ea5e9', fill:'#0ea5e9'} }
-    };
-
-    const SHEETS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzA6No5ywnQjdJAO5T8urtHgw3seEHn3AQmJSZMJAiVnAGKB8T5fzAmSrrxBGhpTJdiRA/exec';
-
-    // Load saved pledges (client-side backup)
     let pledges = [];
     try {
-      const stored = localStorage.getItem('pledges');
-      if (stored) pledges = JSON.parse(stored);
-    } catch (e) {
-      pledges = [];
-    }
+      const s = localStorage.getItem('pledges');
+      if (s) pledges = JSON.parse(s);
+    } catch (e) {}
 
     function updateCsvVisibility() {
-      if (!csvWrapper) return;
       csvWrapper.style.display = pledges.length > 0 ? 'block' : 'none';
     }
+
     updateCsvVisibility();
 
-    function toLatLng(path){ return path.map(([lng, lat]) => ({ lat, lng })); }
-
-    async function loadBoundary(city){
-      if (cityCache[city]) return cityCache[city];
-      const cfg = CITY_CONFIG[city];
-      const res = await fetch(cfg.file, { cache:'no-store' });
-      const raw = await res.json();
-      let feature = raw.type==='FeatureCollection'? raw.features[0] : raw;
-      cityCache[city] = feature;
-      return feature;
+    function toLatLng(path) {
+      return path.map(([lng, lat]) => ({ lat, lng }));
     }
 
-    function drawPolygonForCity(city){
+    async function loadBoundary(city) {
+      if (cityCache[city]) return cityCache[city];
+      const res = await fetch(CITY_CONFIG[city].file, { cache: 'no-store' });
+      const raw = await res.json();
+      return (cityCache[city] = raw.type === 'FeatureCollection' ? raw.features[0] : raw);
+    }
+
+    function drawPolygonForCity(city, status) {
       if (polygons[city]) {
         polygons[city].setMap(null);
         delete polygons[city];
       }
+
       const feature = cityCache[city];
       if (!feature) return;
+
       const g = feature.geometry;
-      const cfg = CITY_CONFIG[city];
+      let stroke, fill, fillOpacity;
+
+      if (status === 'inside') {
+        stroke = '#16a34a';
+        fill = '#22c55e';
+        fillOpacity = 0.25;
+      } else if (status === 'outside') {
+        stroke = '#dc2626';
+        fill = '#ef4444';
+        fillOpacity = 0.20;
+      } else {
+        stroke = '#2563eb';
+        fill = '#3b82f6';
+        fillOpacity = 0.15;
+      }
+
       const add = (coords) => {
-        const latlngRings = coords.map(r => toLatLng(r));
         const poly = new google.maps.Polygon({
-          paths: latlngRings,
-          strokeColor: cfg.style.stroke, strokeOpacity: 1, strokeWeight: 2,
-          fillColor: cfg.style.fill, fillOpacity: 0.18
+          paths: coords.map(r => toLatLng(r)),
+          strokeColor: stroke,
+          strokeOpacity: 1,
+          strokeWeight: 2.5,
+          fillColor: fill,
+          fillOpacity
         });
         poly.setMap(map);
         polygons[city] = poly;
       };
+
       if (g.type === 'Polygon') add(g.coordinates);
       else if (g.type === 'MultiPolygon') g.coordinates.forEach(add);
     }
 
-    function fitBoundsToFeature(feature){
+    function fitBoundsToFeature(feature) {
       const bounds = new google.maps.LatLngBounds();
       const g = feature.geometry;
-      const add = (coords) => { toLatLng(coords[0]).forEach(pt => bounds.extend(pt)); };
+
+      const add = (coords) => {
+        toLatLng(coords[0]).forEach(pt => bounds.extend(pt));
+      };
+
       if (g.type === 'Polygon') add(g.coordinates);
       else if (g.type === 'MultiPolygon') g.coordinates.forEach(add);
+
       if (!bounds.isEmpty()) map.fitBounds(bounds);
     }
 
-    function pointInPolygon(latLng, feature){
+    function pointInPolygon(latLng, feature) {
       const pt = turf.point([latLng.lng(), latLng.lat()]);
       const g = feature.geometry;
-      if(g.type==='Polygon') return turf.booleanPointInPolygon(pt, turf.polygon(g.coordinates), {ignoreBoundary:false});
-      if(g.type==='MultiPolygon') return turf.booleanPointInPolygon(pt, turf.multiPolygon(g.coordinates), {ignoreBoundary:false});
+
+      if (g.type === 'Polygon') {
+        return turf.booleanPointInPolygon(pt, turf.polygon(g.coordinates), { ignoreBoundary: false });
+      }
+
+      if (g.type === 'MultiPolygon') {
+        return turf.booleanPointInPolygon(pt, turf.multiPolygon(g.coordinates), { ignoreBoundary: false });
+      }
+
       return false;
     }
 
-    function outsideCTA(cityName, otherCityDetected, otherCityKey){
-      const otherText = otherCityDetected
-        ? `<div class="small">This address appears to be in <strong>${CITY_CONFIG[otherCityKey].name}</strong>. <a href="#" id="switchCityLink">Switch to ${CITY_CONFIG[otherCityKey].name}</a>.</div>`
-        : '';
-      return `
-        <div><strong>Your address is not inside ${cityName} city limits.</strong></div>
-        ${otherText}
-        <div class="small" style="margin-top:4px;">
-          You won’t see this race on your ballot, but you can still help the campaign grow its support.
-        </div>
-        <ul style="margin:8px 0 6px 18px; padding:0; font-weight:normal;">
-          <li><strong>Know 2 people in ${cityName}?</strong> Share this page with them now.</li>
-          <li><strong>Get involved:</strong> help with door-knocking, phone banks, or events.</li>
-        </ul>
-        <div class="sharebar" id="sharebarOutside">
-          <a href="#" class="wa" id="shareWaOut">WhatsApp</a>
-          <a href="#" class="sms" id="shareSmsOut">SMS</a>
-          <a href="#" class="copy" id="shareCopyOut">Copy link</a>
-          <a href="#" class="email" id="shareEmailOut">Email</a>
-        </div>
-        <div style="display:flex; gap:8px; margin-top:10px;">
-          <a href="#" id="volunteerLink" style="flex:1; text-decoration:none; display:inline-block; padding:10px 14px; border-radius:10px; text-align:center; background:#22c55e; color:#fff;">Volunteer</a>
-          <a href="https://www.vote.org/register-to-vote/" target="_blank" style="flex:1; text-decoration:none; display:inline-block; padding:10px 14px; border-radius:10px; text-align:center; background:#2563eb; color:#fff;">Get updates</a>
-        </div>
-      `;
-    }
-
-    function wireOutsideShare(cityName){
-      const shortId = Math.random().toString(36).slice(2,8);
-      const base = location.href.split('#')[0];
-      const shareUrl = `${base}?ref=pledge-${shortId}`;
-      const msg = `I just checked my address. If you live in ${cityName}, can you pledge your support?`;
-
-      const wa = document.getElementById('shareWaOut');
-      const sms = document.getElementById('shareSmsOut');
-      const cp = document.getElementById('shareCopyOut');
-      const em = document.getElementById('shareEmailOut');
-      if (!wa || !sms || !cp || !em) return;
-
-      wa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg+' '+shareUrl)}`;
-      sms.href = `sms:?&body=${encodeURIComponent(msg+' '+shareUrl)}`;
-
-      cp.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(shareUrl); alert('Link copied'); };
-
-      em.href = `mailto:?subject=${encodeURIComponent('Support ' + cityName)}&body=${encodeURIComponent(msg+' '+shareUrl)}`;
-
-      const vol = document.getElementById('volunteerLink');
-      if (vol) vol.href = 'https://example.com/volunteer'; // replace with real volunteer URL
-    }
-
-    function showInside(cityName){
-      resultEl.style.display='block';
+    function showInside(cityName) {
+      resultEl.style.display = 'block';
       resultEl.classList.remove('outside');
       resultEl.innerHTML = `
-        <div><strong>Yes! Your address is in ${cityName}.</strong></div>
-        <div class="small">
-          You can vote in this race. Please complete the pledge form below so the campaign can count you toward their win number and send you voting reminders.
-        </div>
+        <div><strong>✅ Yes! Your address is in ${cityName}.</strong></div>
+        <div class="small">You can vote in this race. Complete the petition below to help Julio qualify for the ballot.</div>
       `;
     }
 
-    function showOutside(cityName, otherCityDetected=false, otherCityKey=null){
-      resultEl.style.display='block';
+    function showOutside(cityName, otherDetected = false, otherKey = null) {
+      resultEl.style.display = 'block';
       resultEl.classList.add('outside');
-      resultEl.innerHTML = outsideCTA(cityName, otherCityDetected, otherCityKey);
-      wireOutsideShare(cityName);
-      if (otherCityDetected){
-        const link = document.getElementById('switchCityLink');
-        if (link){
-          link.addEventListener('click', async (e)=>{
-            e.preventDefault();
-            citySelect.value = otherCityKey;
-            await renderForCity(otherCityKey);
-            resultEl.style.display='none';
-          });
-        }
+
+      const otherText = otherDetected
+        ? `<div class="small">This address appears to be in <strong>${CITY_CONFIG[otherKey].name}</strong>. <a href="#" id="switchCityLink">Switch to ${CITY_CONFIG[otherKey].name}</a>.</div>`
+        : '';
+
+      resultEl.innerHTML = `
+        <div><strong>❌ Your address is not inside ${cityName} city limits.</strong></div>
+        ${otherText}
+        <div class="small" style="margin-top:4px;">You won't see this race on your ballot, but you can still help by sharing this page.</div>
+      `;
+
+      if (otherDetected) {
+        document.getElementById('switchCityLink')?.addEventListener('click', async (e) => {
+          e.preventDefault();
+          citySelect.value = otherKey;
+          await renderForCity(otherKey);
+          resultEl.style.display = 'none';
+        });
       }
     }
 
-    async function renderForCity(city, {fit=true}={}){
+    async function renderForCity(city, { fit = true } = {}) {
       const feature = await loadBoundary(city);
       boundaryGeoJSON = feature;
-      drawPolygonForCity(city);
+      drawPolygonForCity(city, currentBoundaryStatus);
       legendChip.textContent = `${CITY_CONFIG[city].name} boundary`;
-      const other = (city === 'homestead') ? 'floridacity' : 'homestead';
+
+      const other = city === 'homestead' ? 'floridacity' : 'homestead';
       if (polygons[other]) {
         polygons[other].setMap(null);
         delete polygons[other];
       }
+
       if (fit) fitBoundsToFeature(feature);
     }
 
-    function displayResults(latLng){
+    function displayResults(latLng) {
       if (!boundaryGeoJSON) return;
+
       const selected = citySelect.value;
       const other = selected === 'homestead' ? 'floridacity' : 'homestead';
       const inSelected = pointInPolygon(latLng, cityCache[selected]);
 
-      if (inSelected){
+      if (inSelected) {
+        currentBoundaryStatus = 'inside';
+        drawPolygonForCity(selected, 'inside');
         showInside(CITY_CONFIG[selected].name);
       } else {
-        (async ()=>{
+        (async () => {
           const otherFeat = await loadBoundary(other);
           const inOther = pointInPolygon(latLng, otherFeat);
-          if (inOther){
-            showOutside(CITY_CONFIG[selected].name, true, other);
-          } else {
-            showOutside(CITY_CONFIG[selected].name, false, null);
-          }
+          currentBoundaryStatus = 'outside';
+          drawPolygonForCity(selected, 'outside');
+          showOutside(CITY_CONFIG[selected].name, inOther, inOther ? other : null);
         })();
       }
 
-      if (!marker) marker = new google.maps.Marker({ position: latLng, map, title: 'Checked address' });
-      else marker.setPosition(latLng);
+      if (!marker) {
+        marker = new google.maps.Marker({ position: latLng, map, title: 'Checked address' });
+      } else {
+        marker.setPosition(latLng);
+      }
+
       map.setCenter(latLng);
       map.setZoom(15);
     }
@@ -405,16 +921,17 @@
     function clearErrors() {
       formError.style.display = 'none';
       formError.textContent = '';
-      [nameInput, voterCountInput, phoneNumberInput, addressInput].forEach(el => {
-        if (!el) return;
-        el.classList.remove('error');
-      });
+      [nameInput, emailInput, voterCountInput, phoneNumberInput, addressInput, signatureInput].forEach(el => el?.classList.remove('error'));
+    }
+
+    function validateEmail(v) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
     }
 
     function validateForm() {
       if (!addressInput.value.trim() || resultEl.style.display === 'none') {
         addressInput.classList.add('error');
-        return 'Please check your home address on the map before pledging.';
+        return 'Please check your home address on the map first.';
       }
 
       if (!nameInput.value.trim()) {
@@ -422,38 +939,42 @@
         return 'Please enter your full name.';
       }
 
-      const voters = parseInt(voterCountInput.value, 10);
-      if (!voters || voters < 1) {
+      if (!emailInput.value.trim() || !validateEmail(emailInput.value.trim())) {
+        emailInput.classList.add('error');
+        return 'Please enter a valid email address.';
+      }
+
+      if (!phoneNumberInput.value.trim()) {
+        phoneNumberInput.classList.add('error');
+        return 'Please enter your mobile number.';
+      }
+
+      const v = parseInt(voterCountInput.value, 10);
+      if (!v || v < 1) {
         voterCountInput.classList.add('error');
-        return 'Please enter how many registered voters live in your household.';
+        return 'Please enter the number of registered voters in your household.';
+      }
+
+      if (!signatureInput.value.trim()) {
+        signatureInput.classList.add('error');
+        return 'Please type your name as your signature.';
       }
 
       if (!consentInline.checked) {
-        return 'Please check the box to agree to receive campaign updates and voting reminders.';
+        return 'Please check the box to agree to receive campaign updates.';
       }
 
       return '';
     }
 
     function pledgesToCsv() {
-      const headers = [
-        'timestamp',
-        'campaign_id',
-        'supporter_full_name',
-        'full_address',
-        'city_key',
-        'city_display',
-        'voters_at_address',
-        'phone',
-        'consent',
-        'signature',
-        'source'
-      ];
+      const headers = ['timestamp','campaign_id','full_name','email','address','city_key','city_display','voters_at_address','phone','consent','signature','source','inside_boundary'];
 
       const rows = pledges.map(p => [
         p.timestamp,
         p.campaign_id,
         p.supporter_full_name,
+        p.email,
         p.full_address,
         p.city_key,
         p.city_display,
@@ -461,161 +982,204 @@
         p.phone,
         p.consent ? 'yes' : 'no',
         p.signature,
-        p.source
+        p.source,
+        p.inside_boundary
       ]);
 
-      const allRows = [headers, ...rows];
-
-      return allRows
-        .map(row =>
-          row
-            .map(value => {
-              const s = String(value ?? '');
-              const escaped = s.replace(/"/g, '""');
-              return `"${escaped}"`;
-            })
-            .join(',')
-        )
+      return [headers, ...rows]
+        .map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
         .join('\r\n');
     }
 
-    if (downloadCsvBtn) {
-      downloadCsvBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (!pledges.length) {
-          alert('No pledges to download yet.');
-          return;
-        }
+    downloadCsvBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!pledges.length) {
+        alert('No pledges yet.');
+        return;
+      }
 
-        const csv = pledgesToCsv();
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g, '-');
-        link.download = `pledges-${ts}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      });
-    }
+      const blob = new Blob([pledgesToCsv()], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
 
-        // Share popup (after pledge)
-        function openPopup(){ popup.style.display = 'block'; }
-    closePopup.addEventListener('click', ()=> popup.style.display='none');
+      link.href = url;
+      link.download = `pledges-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    });
 
-    function openShare(){
+    function wireShare() {
       const cityName = CITY_CONFIG[citySelect.value].name;
-      const msg = `Pledge your support if you live in ${cityName}:`;
+      const msg = `I just signed the petition to get Julio Guzman on the mayoral ballot in ${cityName}. Sign here:`;
       const url = location.href.split('#')[0];
 
       shareWa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg + ' ' + url)}`;
       shareSms.href = `sms:?&body=${encodeURIComponent(msg + ' ' + url)}`;
-
-      shareCopy.onclick = (e)=>{ e.preventDefault(); navigator.clipboard.writeText(url); alert('Link copied'); };
-
-      shareEmail.href = `mailto:?subject=${encodeURIComponent('Pledge for ' + cityName)}&body=${encodeURIComponent(msg + ' ' + url)}`;
-      openPopup();
+      shareCopy.onclick = (e) => {
+        e.preventDefault();
+        navigator.clipboard.writeText(url);
+        alert('Link copied!');
+      };
+      shareEmail.href = `mailto:?subject=${encodeURIComponent('Sign for Julio Guzman – Mayor')}&body=${encodeURIComponent(msg + ' ' + url)}`;
     }
 
-    // 🔹 Submit handler
-    document.getElementById('submitBtn').addEventListener('click', (e) => {
+    function showStatusMsg(msg, type) {
+      supabaseStatus.textContent = msg;
+      supabaseStatus.style.color = type === 'ok' ? 'var(--green)' : 'var(--gray-500)';
+      supabaseStatus.style.display = 'block';
+
+      setTimeout(() => {
+        supabaseStatus.style.display = 'none';
+      }, 5000);
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', async (e) => {
       e.preventDefault();
       clearErrors();
+
       const err = validateForm();
       if (err) {
         formError.textContent = err;
         formError.style.display = 'block';
-        console.log('Validation error:', err);
         return;
       }
 
-      const voters = parseInt(voterCountInput.value, 10) || 0;
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting…';
 
       const pledge = {
         timestamp: new Date().toISOString(),
-        campaign_id: 'homestead_2025_demo',
+        campaign_id: 'julio_guzman_mayor_2025',
         supporter_full_name: nameInput.value.trim(),
+        email: emailInput.value.trim(),
         full_address: addressInput.value.trim(),
         city_key: citySelect.value,
         city_display: CITY_CONFIG[citySelect.value].name,
-        voters_at_address: voters,
+        voters_at_address: parseInt(voterCountInput.value, 10) || 0,
         phone: phoneNumberInput.value.trim(),
         consent: !!consentInline.checked,
         signature: signatureInput.value.trim(),
-        source: 'web:boundary_form_v1'
+        source: 'web:boundary_form_v3',
+        inside_boundary: currentBoundaryStatus === 'inside'
       };
 
-      console.log('Pledge being sent:', pledge);
+      let supabaseOk = false;
 
-      // Local backup for CSV
+      if (supabase && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+        try {
+          const { error } = await supabase.from(TABLE_NAME).insert([{
+            timestamp: pledge.timestamp,
+            campaign_id: pledge.campaign_id,
+            full_name: pledge.supporter_full_name,
+            email: pledge.email,
+            address: pledge.full_address,
+            city_key: pledge.city_key,
+            city_display: pledge.city_display,
+            voters_at_address: pledge.voters_at_address,
+            phone: pledge.phone,
+            consent: pledge.consent,
+            signature: pledge.signature,
+            source: pledge.source,
+            inside_boundary: pledge.inside_boundary
+          }]);
+
+          if (!error) supabaseOk = true;
+          else console.warn('Supabase:', error);
+        } catch (err) {
+          console.warn('Supabase insert failed:', err);
+        }
+      }
+
       pledges.push(pledge);
       try {
         localStorage.setItem('pledges', JSON.stringify(pledges));
-      } catch (e) {
-        console.warn('Could not save pledges to localStorage', e);
-      }
+      } catch (e) {}
+
       updateCsvVisibility();
 
-      // 🔹 Send to Google Sheets (fire-and-forget, CORS-safe)
       if (SHEETS_ENDPOINT) {
         fetch(SHEETS_ENDPOINT, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify(pledge)
-        })
-        .then(() => {
-          console.log('Pledge sent to Sheets (no-cors). Check sheet for new row.');
-        })
-        .catch(err => {
-          console.warn('Error sending pledge to Sheets:', err);
-        });
+        }).catch(() => {});
       }
 
-      openShare();
+      submitBtn.disabled = false;
+      submitBtn.textContent = '✍️ Sign the Petition & Help Julio Reach 3,500';
+
+      if (supabaseOk) {
+        showStatusMsg('✓ Saved to database', 'ok');
+      }
+
+      await loadProgress();
+      wireShare();
+
+      postPledgeReveal.style.display = 'block';
+      stickyBar.classList.add('hidden');
+
+      setTimeout(() => {
+        postPledgeReveal.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     });
 
-    // Google Maps init
-    async function initMap(){
+    async function initMap() {
       map = new google.maps.Map(document.getElementById('map-container'), {
-        center:{lat:25.4687,lng:-80.4776}, zoom:13, mapTypeControl:false, streetViewControl:false
+        center: { lat: 25.4687, lng: -80.4776 },
+        zoom: 13,
+        mapTypeControl: false,
+        streetViewControl: false,
+        styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }]
       });
-      autocomplete = new google.maps.places.Autocomplete(addressInput, { types: ['address'], componentRestrictions:{ country:'us' } });
+
+      autocomplete = new google.maps.places.Autocomplete(addressInput, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' }
+      });
+
       geocoder = new google.maps.Geocoder();
 
-      // Initial city boundary overlay
       await renderForCity(citySelect.value);
 
-      autocomplete.addListener('place_changed', async ()=>{
+      autocomplete.addListener('place_changed', async () => {
         const place = autocomplete.getPlace();
-        if(place?.geometry){
+        if (place?.geometry) {
           displayResults(place.geometry.location);
         } else {
-          resultEl.style.display='block';
+          resultEl.style.display = 'block';
           resultEl.classList.add('outside');
           resultEl.textContent = 'No details available for that address.';
         }
       });
 
-      addressInput.addEventListener('keydown', (e)=>{
-        if(e.key==='Enter' && addressInput.value.trim()){
-          geocoder.geocode({ address: addressInput.value.trim(), componentRestrictions:{ country:'US' } }, (results, status)=>{
-            if(status==='OK' && results[0]){
-              displayResults(results[0].geometry.location);
-            } else {
-              resultEl.style.display='block';
-              resultEl.classList.add('outside');
-              resultEl.textContent = 'Could not geocode that address. Please select from the suggestions.';
+      addressInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && addressInput.value.trim()) {
+          geocoder.geocode(
+            {
+              address: addressInput.value.trim(),
+              componentRestrictions: { country: 'US' }
+            },
+            (results, status) => {
+              if (status === 'OK' && results[0]) {
+                displayResults(results[0].geometry.location);
+              } else {
+                resultEl.style.display = 'block';
+                resultEl.classList.add('outside');
+                resultEl.textContent = 'Could not geocode that address. Please select from the suggestions.';
+              }
             }
-          });
+          );
         }
       });
 
-      citySelect.addEventListener('change', async ()=>{
+      citySelect.addEventListener('change', async () => {
+        currentBoundaryStatus = null;
         await renderForCity(citySelect.value);
-        resultEl.style.display='none';
+        resultEl.style.display = 'none';
       });
     }
   </script>
@@ -623,16 +1187,6 @@
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAShTpkHyffGlSUWQ9ttWxAVprwj6vUEQo&libraries=places&callback=initMap"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
 
 
 
