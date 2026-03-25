@@ -325,6 +325,23 @@
       border-left: 3px solid var(--red);
     }
 
+    .form-helper {
+      margin: 6px 0 12px;
+      font-size: 12px;
+      color: var(--gray-500);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
     #csvWrapper {
       margin: 8px 0 0;
       text-align: right;
@@ -346,6 +363,36 @@
       margin-top: 4px;
       display: none;
       text-align: right;
+    }
+
+    .admin-panel {
+      margin-top: 14px;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 12px;
+    }
+
+    .admin-panel summary {
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--navy);
+    }
+
+    .admin-grid {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .admin-grid div {
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 8px;
     }
 
     .voter-tools-card {
@@ -665,16 +712,17 @@
 
     <div class="row">
       <label for="addressInput">Your home address: <span style="color:var(--red)">*</span></label>
-      <input type="text" id="addressInput" placeholder="Enter your home address" autocomplete="street-address" />
+      <input type="text" id="addressInput" placeholder="Enter your home address" autocomplete="street-address" aria-describedby="addressHelp" />
     </div>
+    <p id="addressHelp" class="form-helper">Start typing and choose the exact address suggestion to improve boundary accuracy.</p>
 
     <div class="map-container">
       <div id="legendChip">City boundary</div>
       <div id="map-container"></div>
     </div>
 
-    <div id="mapError"></div>
-    <div id="result" aria-live="polite"></div>
+    <div id="mapError" role="alert"></div>
+    <div id="result" aria-live="polite" role="status"></div>
 
     <div class="row">
       <label for="nameInput">Full name: <span style="color:var(--red)">*</span></label>
@@ -706,10 +754,20 @@
       <input type="text" id="signatureInputMain" placeholder="Type your full name to sign" />
     </div>
 
-    <button id="submitBtn" class="btn-submit">✍️ Sign the Petition &amp; Help Julio Reach 3,500</button>
-    <div id="formError"></div>
-    <div id="supabaseStatus"></div>
+    <button id="submitBtn" class="btn-submit" type="button" aria-describedby="submitAssistiveText">✍️ Sign the Petition &amp; Help Julio Reach 3,500</button>
+    <span id="submitAssistiveText" class="sr-only">Submits your pledge and contact details.</span>
+    <div id="formError" role="alert"></div>
+    <div id="supabaseStatus" aria-live="polite"></div>
     <div id="csvWrapper" style="display:none;"><button id="downloadCsvBtn">Download pledges (CSV)</button></div>
+    <details class="admin-panel" id="adminPanel">
+      <summary>Admin data status</summary>
+      <div class="admin-grid">
+        <div><strong>Total local pledges</strong><br><span id="adminLocalCount">0</span></div>
+        <div><strong>Pending sync queue</strong><br><span id="adminPendingCount">0</span></div>
+        <div><strong>Last sync attempt</strong><br><span id="adminLastSync">Never</span></div>
+        <div><strong>Duplicate blocked</strong><br><span id="adminDuplicateCount">0</span></div>
+      </div>
+    </details>
 
     <div id="postPledgeReveal" class="voter-tools-card">
       <div class="vtc-header">
@@ -781,6 +839,9 @@
     const MANUAL_FLOOR      = 142;
     const GOAL              = 3500;
     const SHEETS_ENDPOINT   = 'https://script.google.com/macros/s/AKfycbzA6No5ywnQjdJAO5T8urtHgw3seEHn3AQmJSZMJAiVnAGKB8T5fzAmSrrxBGhpTJdiRA/exec';
+    const LOCAL_PLEDGES_KEY = 'pledges';
+    const PENDING_SYNC_KEY  = 'pendingPledgeSync';
+    const DUPLICATE_WINDOW_MS = 1000 * 60 * 10;
 
     let supabase = null;
     try {
@@ -836,6 +897,10 @@
     const shareEmail        = document.getElementById('shareEmail');
     const thankYouModal     = document.getElementById('thankYouModal');
     const thankYouContinueBtn = document.getElementById('thankYouContinueBtn');
+    const adminLocalCount   = document.getElementById('adminLocalCount');
+    const adminPendingCount = document.getElementById('adminPendingCount');
+    const adminLastSync     = document.getElementById('adminLastSync');
+    const adminDuplicateCount = document.getElementById('adminDuplicateCount');
 
     document.getElementById('stickyClose').addEventListener('click', () => stickyBar.classList.add('hidden'));
 
@@ -858,17 +923,33 @@
     const polygons = {};
     let currentBoundaryStatus = null;
     let mapsReady = false;
+    let duplicateBlocked = 0;
 
     let pledges = [];
+    let pendingSyncQueue = [];
     try {
-      const s = localStorage.getItem('pledges');
+      const s = localStorage.getItem(LOCAL_PLEDGES_KEY);
       if (s) pledges = JSON.parse(s);
+    } catch (e) {}
+    try {
+      const queue = localStorage.getItem(PENDING_SYNC_KEY);
+      if (queue) pendingSyncQueue = JSON.parse(queue);
     } catch (e) {}
 
     function updateCsvVisibility() {
       csvWrapper.style.display = pledges.length > 0 ? 'block' : 'none';
     }
     updateCsvVisibility();
+
+    function updateAdminPanel(lastSyncText = null) {
+      adminLocalCount.textContent = String(pledges.length);
+      adminPendingCount.textContent = String(pendingSyncQueue.length);
+      adminDuplicateCount.textContent = String(duplicateBlocked);
+      if (lastSyncText) adminLastSync.textContent = lastSyncText;
+    }
+    updateAdminPanel();
+    window.addEventListener('online', () => { syncPendingQueue(); });
+    setInterval(() => { syncPendingQueue(); }, 30000);
 
     function showMapError(message) {
       mapError.textContent = message;
@@ -1059,6 +1140,78 @@
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
     }
 
+    function normalizePhone(v) {
+      return (v || '').replace(/\D/g, '');
+    }
+
+    function pledgeFingerprint(pledge) {
+      return [
+        (pledge.supporter_full_name || '').toLowerCase().trim(),
+        (pledge.email || '').toLowerCase().trim(),
+        normalizePhone(pledge.phone),
+        (pledge.full_address || '').toLowerCase().trim()
+      ].join('|');
+    }
+
+    function isLikelyDuplicate(pledge) {
+      const fingerprint = pledgeFingerprint(pledge);
+      const now = Date.now();
+      return pledges.some((existing) => {
+        const existingTs = Date.parse(existing.timestamp || '');
+        const withinWindow = Number.isFinite(existingTs) && (now - existingTs <= DUPLICATE_WINDOW_MS);
+        return withinWindow && pledgeFingerprint(existing) === fingerprint;
+      });
+    }
+
+    function persistLocalData() {
+      try {
+        localStorage.setItem(LOCAL_PLEDGES_KEY, JSON.stringify(pledges));
+        localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(pendingSyncQueue));
+      } catch (e) {
+        console.warn('Local persistence failed:', e);
+      }
+    }
+
+    async function sendToSheets(pledge) {
+      if (!SHEETS_ENDPOINT) return false;
+      try {
+        await fetch(SHEETS_ENDPOINT, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(pledge)
+        });
+        return true;
+      } catch (err) {
+        console.warn('Sheets sync failed:', err);
+        return false;
+      }
+    }
+
+    async function syncPendingQueue() {
+      if (!pendingSyncQueue.length) {
+        updateAdminPanel(new Date().toLocaleString());
+        return;
+      }
+      const stillPending = [];
+      for (const item of pendingSyncQueue) {
+        let supabaseOk = false;
+        if (supabase) {
+          try {
+            const { error } = await supabase.from(TABLE_NAME).insert([item.dbRecord]);
+            supabaseOk = !error;
+          } catch (err) {
+            supabaseOk = false;
+          }
+        }
+        const sheetsOk = await sendToSheets(item.rawPledge);
+        if (!supabaseOk && !sheetsOk) stillPending.push(item);
+      }
+      pendingSyncQueue = stillPending;
+      persistLocalData();
+      updateAdminPanel(new Date().toLocaleString());
+    }
+
     function validateForm() {
       if (!mapsReady) return 'The map is still loading. Please wait a moment and try again.';
       if (!addressInput.value.trim() || resultEl.style.display === 'none') {
@@ -1085,6 +1238,10 @@
       if (!signatureInput.value.trim()) {
         signatureInput.classList.add('error');
         return 'Please type your name as your signature.';
+      }
+      if (signatureInput.value.trim().toLowerCase() !== nameInput.value.trim().toLowerCase()) {
+        signatureInput.classList.add('error');
+        return 'Your signature must match your full name.';
       }
       if (!consentInline.checked) return 'Please check the box to agree to receive campaign updates.';
       return '';
@@ -1153,7 +1310,7 @@
 
     function showStatusMsg(msg, type) {
       supabaseStatus.textContent = msg;
-      supabaseStatus.style.color = type === 'ok' ? 'var(--green)' : 'var(--gray-500)';
+      supabaseStatus.style.color = type === 'ok' ? 'var(--green)' : (type === 'error' ? 'var(--red)' : 'var(--gray-500)');
       supabaseStatus.style.display = 'block';
       setTimeout(() => { supabaseStatus.style.display = 'none'; }, 5000);
     }
@@ -1210,53 +1367,60 @@
         inside_boundary: currentBoundaryStatus === 'inside'
       };
 
-      let supabaseOk = false;
+      if (isLikelyDuplicate(pledge)) {
+        duplicateBlocked += 1;
+        updateAdminPanel(new Date().toLocaleString());
+        formError.textContent = 'This looks like a recent duplicate submission. Please wait or contact campaign staff if this is a mistake.';
+        formError.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = '✍️ Sign the Petition & Help Julio Reach 3,500';
+        return;
+      }
 
+      const dbRecord = {
+        timestamp: pledge.timestamp,
+        campaign_id: pledge.campaign_id,
+        full_name: pledge.supporter_full_name,
+        email: pledge.email,
+        address: pledge.full_address,
+        city_key: pledge.city_key,
+        city_display: pledge.city_display,
+        voters_at_address: pledge.voters_at_address,
+        phone: pledge.phone,
+        consent: pledge.consent,
+        signature: pledge.signature,
+        source: pledge.source,
+        inside_boundary: pledge.inside_boundary
+      };
+
+      let supabaseOk = false;
       if (supabase) {
         try {
-          const { error } = await supabase.from(TABLE_NAME).insert([{
-            timestamp: pledge.timestamp,
-            campaign_id: pledge.campaign_id,
-            full_name: pledge.supporter_full_name,
-            email: pledge.email,
-            address: pledge.full_address,
-            city_key: pledge.city_key,
-            city_display: pledge.city_display,
-            voters_at_address: pledge.voters_at_address,
-            phone: pledge.phone,
-            consent: pledge.consent,
-            signature: pledge.signature,
-            source: pledge.source,
-            inside_boundary: pledge.inside_boundary
-          }]);
-
-          if (!error) supabaseOk = true;
-          else console.warn('Supabase:', error);
+          const { error } = await supabase.from(TABLE_NAME).insert([dbRecord]);
+          supabaseOk = !error;
         } catch (err) {
-          console.warn('Supabase insert failed:', err);
+          supabaseOk = false;
         }
       }
+      const sheetsOk = await sendToSheets(pledge);
 
       pledges.push(pledge);
-      try {
-        localStorage.setItem('pledges', JSON.stringify(pledges));
-      } catch (e) {}
+      if (!supabaseOk && !sheetsOk) {
+        pendingSyncQueue.push({ rawPledge: pledge, dbRecord });
+      }
+      persistLocalData();
 
       updateCsvVisibility();
-
-      if (SHEETS_ENDPOINT) {
-        fetch(SHEETS_ENDPOINT, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(pledge)
-        }).catch(() => {});
-      }
+      updateAdminPanel(new Date().toLocaleString());
 
       submitBtn.disabled = false;
       submitBtn.textContent = '✍️ Sign the Petition & Help Julio Reach 3,500';
 
-      if (supabaseOk) showStatusMsg('✓ Saved to database', 'ok');
+      if (supabaseOk || sheetsOk) {
+        showStatusMsg('✓ Saved to campaign systems', 'ok');
+      } else {
+        showStatusMsg('Saved locally. Admin sync will retry automatically.', 'error');
+      }
 
       await loadProgress();
       wireShare();
