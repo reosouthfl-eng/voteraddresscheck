@@ -1507,18 +1507,19 @@
       }
     }
 
-    window.initMap = initMap;
-
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        if (!window.google || !window.google.maps) {
-          showMapError('Google Maps did not load. If this page is on GitHub Pages, your API key may need that domain added to its allowed referrers.');
-        }
-      }, 3500);
-    });
+    // Load Maps API then call initMap ourselves — avoids callback timing issues
+    (function() {
+      var script = document.createElement('script');
+      script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAHKqFA29mhzBtl0MqPh-xHTuYNgEnvu0U&libraries=places&loading=async';
+      script.async = true;
+      script.defer = true;
+      script.onload = function() { initMap(); };
+      script.onerror = function() {
+        showMapError('Google Maps failed to load. Check your API key and make sure Maps JavaScript API is enabled in Google Cloud Console.');
+      };
+      document.head.appendChild(script);
+    })();
   </script>
-
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHKqFA29mhzBtl0MqPh-xHTuYNgEnvu0U&libraries=places&callback=initMap"></script>
 </body>
 </html>
 
