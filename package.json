@@ -1,10 +1,9 @@
 {
-  "name": "myproject",
+  "name": "voteraddresscheck",
   "version": "1.0.0",
-  "description": "",
+  "description": "Campaign address boundary check and petition tool for Julio Guzman for Mayor",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
   "keywords": [],
@@ -15,8 +14,5 @@
     "axios": "^1.6.8",
     "dotenv": "^16.4.5",
     "express": "^4.19.2"
-  },
-  "devDependencies": {
-    "@react-native-community/cli": "^15.1.3"
   }
 }

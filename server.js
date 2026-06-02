@@ -11,9 +11,12 @@ const port = process.env.PORT || 3000;
 // Parse JSON bodies
 app.use(express.json());
 
-// Serve static assets (adjust folder as needed)
-// If your boundary.html + geojson are in the project root, use __dirname.
-app.use(express.static(path.join(__dirname)));
+// Only serve specific static file types — never expose .env or server files
+app.use(express.static(path.join(__dirname), {
+  index: 'boundary.html',
+  dotfiles: 'deny',         // blocks .env, .git, etc.
+  extensions: ['html', 'js', 'geojson', 'json', 'css', 'png', 'jpg', 'svg']
+}));
 
 // ---- Load & normalize GeoJSONs ----
 function loadFeature(filePath) {

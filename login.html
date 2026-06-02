@@ -9,14 +9,10 @@
     :root{ --green:#22c55e; --green-700:#16a34a; --border:#e5e7eb; --muted:#f3f4f6; --ink:#111827; --error:#b91c1c; }
     *{box-sizing:border-box}
     body{ font-family:Lato,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; align-items:center; background:#f4f4f9; color:var(--ink); }
-
-    /* header: align back link left (no spacer div) */
     .header-wrapper{ display:flex; align-items:center; justify-content:flex-start; width:92%; max-width:420px; margin:12px auto 0; }
     .back-link{ text-decoration:none; color:#111; font-size:13px; padding:8px 10px; border-radius:9999px; background:#fff; border:1px solid var(--border); }
     .back-link:hover{ background:var(--muted); }
-
     h1{ font-size:16px; font-weight:700; width:92%; max-width:420px; margin:10px auto 0; }
-
     .card{ width:92%; max-width:420px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px; box-shadow:0 4px 10px rgba(0,0,0,.04); }
     .row{ display:grid; grid-template-columns:1fr; gap:6px; margin-bottom:10px; }
     .row label{ font-size:14px; font-weight:700; }
@@ -24,18 +20,15 @@
     .input:focus{ outline:none; border-color:#0073e6; }
     .input.error{ border-color:var(--error); }
     .error-text{ font-size:12px; color:var(--error); display:none; }
-
     .checkbox-row{ display:flex; align-items:center; gap:8px; margin:8px 0 6px; }
-
     .button{ width:100%; padding:12px 20px; font-size:14px; background:var(--green); color:#fff; border:none; border-radius:10px; cursor:pointer; font-weight:700; }
     .button:hover{ background:var(--green-700); }
-
-    /* links row: don't stretch; wrap nicely */
+    .button:disabled{ opacity:.6; cursor:not-allowed; }
     .links{ display:flex; justify-content:flex-start; gap:12px; margin-top:12px; flex-wrap:wrap; }
     .links a{ font-size:13px; color:#111; text-decoration:none; white-space:nowrap; }
     .links a:hover{ text-decoration:underline; }
-
-    .toast{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#111827; color:#fff; padding:10px 14px; border-radius:10px; font-size:13px; display:none; }
+    .toast{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#111827; color:#fff; padding:10px 14px; border-radius:10px; font-size:13px; display:none; z-index:9999; }
+    .toast.error{ background:#b91c1c; }
   </style>
 </head>
 <body>
@@ -57,7 +50,7 @@
         <label for="password">Password</label>
         <div style="position:relative;">
           <input id="password" class="input" type="password" placeholder="Your password" autocomplete="current-password" required />
-          <button type="button" id="togglePw" aria-label="Show password" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:12px; color:#111;">Show</button>
+          <button type="button" id="togglePw" aria-label="Show password" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:12px;color:#111;">Show</button>
         </div>
         <div id="pwErr" class="error-text">Password must be at least 8 characters.</div>
       </div>
@@ -79,51 +72,98 @@
 
   <div id="toast" class="toast"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
-    const pw = document.getElementById('password');
-    const tgl = document.getElementById('togglePw');
-    tgl.addEventListener('click', ()=>{
-      const showing = pw.type === 'text';
-      pw.type = showing ? 'password' : 'text';
-      tgl.textContent = showing ? 'Show' : 'Hide';
-      tgl.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+    // ── Supabase credentials ── fill these in after creating your Supabase project
+    const SUPABASE_URL      = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+    let supabase = null;
+    try {
+      if (window.supabase && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+    } catch (e) {
+      console.warn('Supabase init failed:', e);
+    }
+
+    const emailEl  = document.getElementById('email');
+    const pwEl     = document.getElementById('password');
+    const emailErr = document.getElementById('emailErr');
+    const pwErr    = document.getElementById('pwErr');
+    const btn      = document.getElementById('signInBtn');
+    const toast    = document.getElementById('toast');
+
+    document.getElementById('togglePw').addEventListener('click', () => {
+      const showing = pwEl.type === 'text';
+      pwEl.type = showing ? 'password' : 'text';
+      document.getElementById('togglePw').textContent = showing ? 'Show' : 'Hide';
     });
 
-    const email = document.getElementById('email');
-    const emailErr = document.getElementById('emailErr');
-    const pwErr = document.getElementById('pwErr');
-    const form = document.getElementById('loginForm');
-    const btn = document.getElementById('signInBtn');
-    const toast = document.getElementById('toast');
-
-    function toastMsg(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',2000); }
-    function validEmail(v){ return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v); }
-
-    <script>
-  // ...
-  form.addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    // (keep your existing validation)
-
-    btn.disabled=true; btn.textContent='Signing in…';
-    try{
-      await new Promise(r=>setTimeout(r,700));
-
-      // ⬇️ NEW: remember the session (demo)
-      localStorage.setItem('current_user', JSON.stringify({
-        email: document.getElementById('email').value.trim(),
-        role: 'Admin',             // or fetch from backend after auth
-        name: 'Account Owner'
-      }));
-
-      window.location.href = './team.html';   // land on Team
-    }catch(err){
-      toastMsg('Login failed'); 
-    }finally{
-      btn.disabled=false; btn.textContent='Sign in';
+    function showToast(msg, isError = false) {
+      toast.textContent = msg;
+      toast.className = 'toast' + (isError ? ' error' : '');
+      toast.style.display = 'block';
+      setTimeout(() => toast.style.display = 'none', 3000);
     }
-  });
-</script>
 
+    function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email    = emailEl.value.trim();
+      const password = pwEl.value;
+
+      // Validate inputs
+      let ok = true;
+      if (!validEmail(email)) {
+        emailErr.style.display = 'block';
+        emailEl.classList.add('error');
+        ok = false;
+      } else {
+        emailErr.style.display = 'none';
+        emailEl.classList.remove('error');
+      }
+      if (password.length < 8) {
+        pwErr.style.display = 'block';
+        pwEl.classList.add('error');
+        ok = false;
+      } else {
+        pwErr.style.display = 'none';
+        pwEl.classList.remove('error');
+      }
+      if (!ok) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+
+      try {
+        if (supabase) {
+          // Real Supabase auth
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+
+          localStorage.setItem('current_user', JSON.stringify({
+            email: data.user.email,
+            id: data.user.id,
+            role: 'Admin'
+          }));
+        } else {
+          // Supabase not configured — show setup reminder and block login
+          showToast('Admin login requires Supabase to be configured. See setup instructions.', true);
+          return;
+        }
+
+        window.location.href = './team.html';
+      } catch (err) {
+        console.error('Login error:', err);
+        showToast(err.message || 'Invalid email or password.', true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign in';
+      }
+    });
+  </script>
 </body>
 </html>
