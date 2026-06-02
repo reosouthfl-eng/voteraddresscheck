@@ -877,6 +877,16 @@
 
     loadProgress();
 
+    // Live counter — updates instantly when anyone signs
+    if (supabase) {
+      supabase
+        .channel('pledges-count')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: TABLE_NAME }, () => {
+          loadProgress();
+        })
+        .subscribe();
+    }
+
     const stickyBar         = document.getElementById('stickyBar');
     const citySelect        = document.getElementById('citySelect');
     const addressInput      = document.getElementById('addressInput');
