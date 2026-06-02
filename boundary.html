@@ -833,6 +833,10 @@
   </div>
 
   <script>
+    // Expose initMap immediately — function declaration is hoisted so this works
+    // even though initMap is defined later in this script
+    window.initMap = function() { initMap(); };
+
     // ── CONFIGURE: paste your Supabase project URL and anon key below ──────────
     // Get these from: https://supabase.com → your project → Settings → API
     const SUPABASE_URL      = 'https://jngtuihzliqvfmfkjapp.supabase.co';
@@ -1507,19 +1511,9 @@
       }
     }
 
-    // Expose initMap globally so the Maps API callback can find it
-    window.initMap = initMap;
-
-    (function() {
-      var script = document.createElement('script');
-      script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAHKqFA29mhzBtl0MqPh-xHTuYNgEnvu0U&libraries=places&callback=initMap';
-      script.async = true;
-      script.onerror = function() {
-        showMapError('Google Maps failed to load. Check your API key and make sure Maps JavaScript API is enabled in Google Cloud Console.');
-      };
-      document.head.appendChild(script);
-    })();
   </script>
+
+  <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHKqFA29mhzBtl0MqPh-xHTuYNgEnvu0U&libraries=places&callback=initMap"></script>
 </body>
 </html>
 
