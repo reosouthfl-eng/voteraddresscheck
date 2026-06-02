@@ -833,9 +833,14 @@
   </div>
 
   <script>
-    // Expose initMap immediately — function declaration is hoisted so this works
-    // even though initMap is defined later in this script
-    window.initMap = function() { initMap(); };
+    // Maps API callback + window.load fallback — whichever fires first wins
+    var _mapStarted = false;
+    function _startMap() {
+      if (_mapStarted) return;
+      _mapStarted = true;
+      initMap();
+    }
+    window.initMap = _startMap;
 
     // ── CONFIGURE: paste your Supabase project URL and anon key below ──────────
     // Get these from: https://supabase.com → your project → Settings → API
@@ -1511,6 +1516,14 @@
       }
     }
 
+    // Fallback: if callback didn't fire, start on load
+    window.addEventListener('load', function() {
+      if (window.google && window.google.maps) {
+        _startMap();
+      } else {
+        showMapError('Google Maps did not load. Make sure Maps JavaScript API, Places API, and Geocoding API are enabled in Google Cloud Console.');
+      }
+    });
   </script>
 
   <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHKqFA29mhzBtl0MqPh-xHTuYNgEnvu0U&libraries=places&callback=initMap"></script>
