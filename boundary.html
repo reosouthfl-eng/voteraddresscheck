@@ -1507,13 +1507,13 @@
       }
     }
 
-    // Load Maps API then call initMap ourselves — avoids callback timing issues
+    // Expose initMap globally so the Maps API callback can find it
+    window.initMap = initMap;
+
     (function() {
       var script = document.createElement('script');
-      script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAHKqFA29mhzBtl0MqPh-xHTuYNgEnvu0U&libraries=places&loading=async';
+      script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAHKqFA29mhzBtl0MqPh-xHTuYNgEnvu0U&libraries=places&loading=async&callback=initMap';
       script.async = true;
-      script.defer = true;
-      script.onload = function() { initMap(); };
       script.onerror = function() {
         showMapError('Google Maps failed to load. Check your API key and make sure Maps JavaScript API is enabled in Google Cloud Console.');
       };
