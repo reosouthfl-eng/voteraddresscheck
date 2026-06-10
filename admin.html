@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — Pledges</title>
+  <link href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap" rel="stylesheet" />
+  <style>
+    :root{ --green:#16a34a; --border:#e5e7eb; --muted:#f3f4f6; --ink:#111827; --navy:#1e293b; --blue:#2563eb; --gray-500:#6b7280; }
+    *{box-sizing:border-box}
+    body{ font-family:Lato,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin:0; background:#f4f4f9; color:var(--ink); }
+    .topbar{ background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:12px 18px; }
+    .topbar h1{ font-size:15px; margin:0; font-weight:700; }
+    .topbar .right{ display:flex; gap:8px; align-items:center; }
+    .btn{ font-size:13px; padding:7px 12px; border-radius:8px; border:1px solid var(--border); background:#fff; color:#111; cursor:pointer; text-decoration:none; }
+    .btn.primary{ background:var(--green); color:#fff; border-color:var(--green); }
+    .btn:disabled{ opacity:.6; cursor:not-allowed; }
+    .wrap{ max-width:1100px; margin:18px auto; padding:0 16px; }
+    .gate{ max-width:420px; margin:60px auto; background:#fff; border:1px solid var(--border); border-radius:12px; padding:24px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,.04); }
+    .stat-row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+    .stat{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px 16px; min-width:160px; }
+    .stat .num{ font-size:24px; font-weight:700; color:var(--navy); }
+    .stat .lbl{ font-size:12px; color:var(--gray-500); }
+    .card{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:0; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,.04); }
+    .card-head{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); }
+    .card-head h2{ font-size:14px; margin:0; }
+    .table-scroll{ overflow-x:auto; }
+    table{ width:100%; border-collapse:collapse; font-size:13px; }
+    th, td{ text-align:left; padding:9px 12px; border-bottom:1px solid var(--border); white-space:nowrap; }
+    th{ background:#f8fafc; font-size:12px; color:var(--gray-500); position:sticky; top:0; }
+    tr:hover td{ background:#fafafa; }
+    .badge{ display:inline-block; padding:2px 8px; border-radius:9999px; font-size:11px; font-weight:700; }
+    .badge.in{ background:#dcfce7; color:#15803d; }
+    .badge.out{ background:#fef2f2; color:#991b1b; }
+    .empty{ padding:40px 16px; text-align:center; color:var(--gray-500); font-size:14px; }
+    .muted{ font-size:12px; color:var(--gray-500); }
+    .toast{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#111827; color:#fff; padding:10px 14px; border-radius:10px; font-size:13px; display:none; z-index:50; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>Pledge Admin</h1>
+    <div class="right">
+      <span id="whoami" class="muted" style="color:#cbd5e1;"></span>
+      <a class="btn" href="./boundary.html">View site</a>
+      <button class="btn" id="logoutBtn">Log out</button>
+    </div>
+  </div>
+
+  <!-- Shown while we verify the session; replaced by the dashboard or a redirect -->
+  <div id="gate" class="gate">
+    <p>Checking access…</p>
+  </div>
+
+  <div id="dash" class="wrap" style="display:none;">
+    <div class="stat-row">
+      <div class="stat"><div class="num" id="statTotal">—</div><div class="lbl">Total pledges in database</div></div>
+      <div class="stat"><div class="num" id="statInside">—</div><div class="lbl">Inside city boundary</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>All pledges</h2>
+        <button class="btn primary" id="csvBtn">Download CSV</button>
+      </div>
+      <div class="table-scroll">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Address</th>
+              <th>City</th><th>Voters</th><th>Boundary</th><th>Signature</th><th>Source</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div id="empty" class="empty" style="display:none;">No pledges yet.</div>
+    </div>
+    <p class="muted" style="margin-top:10px;">Data is read directly from the database and is visible only to admins. Row-level security blocks the public key from reading these records.</p>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.0/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL      = 'https://jngtuihzliqvfmfkjapp.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_-FEW-wNxEmcU7_fJGlhm8A_ffYkakgk';
+
+    const toast = document.getElementById('toast');
+    function toastMsg(m){ toast.textContent=m; toast.style.display='block'; setTimeout(()=>toast.style.display='none', 2500); }
+
+    let sbClient = null;
+    try { if (window.supabase) sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+    catch (e) { console.warn('Supabase init failed:', e); }
+
+    const gate  = document.getElementById('gate');
+    const dash  = document.getElementById('dash');
+    let pledgeRows = [];
+
+    function goLogin(msg){
+      if (msg) sessionStorage.setItem('admin_login_msg', msg);
+      window.location.replace('./login.html');
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try { await sbClient?.auth.signOut(); } catch (e) {}
+      goLogin();
+    });
+
+    async function init(){
+      if (!sbClient){ gate.innerHTML = '<p>Supabase is not configured.</p>'; return; }
+
+      // 1. Must have a valid, server-issued session.
+      const { data: { session } } = await sbClient.auth.getSession();
+      if (!session){ goLogin('Please sign in to access the admin area.'); return; }
+
+      // 2. Must be a real admin (checked server-side via is_admin()).
+      const { data: isAdmin, error: adminErr } = await sbClient.rpc('is_admin');
+      if (adminErr || !isAdmin){
+        await sbClient.auth.signOut();
+        goLogin('This account does not have admin access.');
+        return;
+      }
+
+      document.getElementById('whoami').textContent = session.user.email;
+
+      // 3. Read pledges. RLS allows this only because we are an authenticated admin.
+      const { data, error } = await sbClient
+        .from('pledges')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error){ gate.innerHTML = '<p>Could not load pledges: ' + (error.message || 'error') + '</p>'; return; }
+
+      pledgeRows = data || [];
+      render();
+      gate.style.display = 'none';
+      dash.style.display = 'block';
+    }
+
+    function esc(v){ return String(v ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+    function render(){
+      const tbody = document.getElementById('tbody');
+      const empty = document.getElementById('empty');
+      const insideCount = pledgeRows.filter(p => p.inside_boundary === true).length;
+
+      document.getElementById('statTotal').textContent = pledgeRows.length.toLocaleString();
+      document.getElementById('statInside').textContent = insideCount.toLocaleString();
+
+      if (!pledgeRows.length){ empty.style.display = 'block'; tbody.innerHTML = ''; return; }
+      empty.style.display = 'none';
+
+      tbody.innerHTML = pledgeRows.map(p => {
+        const date = p.created_at ? new Date(p.created_at).toLocaleString() : esc(p.timestamp);
+        const badge = p.inside_boundary
+          ? '<span class="badge in">Inside</span>'
+          : '<span class="badge out">Outside</span>';
+        return `<tr>
+          <td>${esc(date)}</td>
+          <td>${esc(p.full_name)}</td>
+          <td>${esc(p.email)}</td>
+          <td>${esc(p.phone)}</td>
+          <td>${esc(p.address)}</td>
+          <td>${esc(p.city_display || p.city_key)}</td>
+          <td>${esc(p.voters_at_address)}</td>
+          <td>${badge}</td>
+          <td>${esc(p.signature)}</td>
+          <td>${esc(p.source)}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function toCsv(){
+      const headers = ['created_at','timestamp','campaign_id','full_name','email','phone','address','city_key','city_display','voters_at_address','consent','signature','source','inside_boundary'];
+      const rows = pledgeRows.map(p => headers.map(h => p[h]));
+      return [headers, ...rows]
+        .map(r => r.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(','))
+        .join('\r\n');
+    }
+
+    document.getElementById('csvBtn').addEventListener('click', () => {
+      if (!pledgeRows.length){ toastMsg('No pledges to export.'); return; }
+      const blob = new Blob([toCsv()], { type:'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pledges-${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    init();
+  </script>
+</body>
+</html>

@@ -342,57 +342,12 @@
       border: 0;
     }
 
-    #csvWrapper {
-      margin: 8px 0 0;
-      text-align: right;
-    }
-
-    #downloadCsvBtn {
-      background: none;
-      border: none;
-      color: var(--blue);
-      font-size: 12px;
-      cursor: pointer;
-      text-decoration: underline;
-      padding: 0;
-    }
-
     #supabaseStatus {
       font-size: 11px;
       color: var(--gray-500);
       margin-top: 4px;
       display: none;
       text-align: right;
-    }
-
-    .admin-panel {
-      margin-top: 14px;
-      border: 1px solid var(--gray-200);
-      border-radius: 12px;
-      background: #f8fafc;
-      padding: 12px;
-    }
-
-    .admin-panel summary {
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      color: var(--navy);
-    }
-
-    .admin-grid {
-      margin-top: 10px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      font-size: 12px;
-    }
-
-    .admin-grid div {
-      background: #fff;
-      border: 1px solid var(--gray-200);
-      border-radius: 8px;
-      padding: 8px;
     }
 
     .voter-tools-card {
@@ -758,16 +713,6 @@
     <span id="submitAssistiveText" class="sr-only">Submits your pledge and contact details.</span>
     <div id="formError" role="alert"></div>
     <div id="supabaseStatus" aria-live="polite"></div>
-    <div id="csvWrapper" style="display:none;"><button id="downloadCsvBtn">Download pledges (CSV)</button></div>
-    <details class="admin-panel" id="adminPanel">
-      <summary>Admin data status</summary>
-      <div class="admin-grid">
-        <div><strong>Total local pledges</strong><br><span id="adminLocalCount">0</span></div>
-        <div><strong>Pending sync queue</strong><br><span id="adminPendingCount">0</span></div>
-        <div><strong>Last sync attempt</strong><br><span id="adminLastSync">Never</span></div>
-        <div><strong>Duplicate blocked</strong><br><span id="adminDuplicateCount">0</span></div>
-      </div>
-    </details>
 
     <div id="postPledgeReveal" class="voter-tools-card">
       <div class="vtc-header">
@@ -877,8 +822,10 @@
 
       if (sbClient) {
         try {
-          const { count, error } = await sbClient.from(TABLE_NAME).select('*', { count: 'exact', head: true });
-          if (!error) dbCount = count || 0;
+          // Counts via a SECURITY DEFINER function that returns only the number.
+          // The public key cannot read pledge rows (RLS), so we never select them.
+          const { data, error } = await sbClient.rpc('get_pledge_count');
+          if (!error && typeof data === 'number') dbCount = data;
         } catch (e) {
           console.warn('Progress load failed:', e);
         }
@@ -894,15 +841,9 @@
 
     loadProgress();
 
-    // Live counter — updates instantly when anyone signs
-    if (sbClient) {
-      sbClient
-        .channel('pledges-count')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: TABLE_NAME }, () => {
-          loadProgress();
-        })
-        .subscribe();
-    }
+    // Note: no realtime subscription here. With RLS locking the table, the
+    // public key can't receive row-change events anyway. The count refreshes
+    // on load and after a successful submit.
 
     const stickyBar         = document.getElementById('stickyBar');
     const citySelect        = document.getElementById('citySelect');
@@ -917,8 +858,6 @@
     const consentInline     = document.getElementById('consentInline');
     const signatureInput    = document.getElementById('signatureInputMain');
     const formError         = document.getElementById('formError');
-    const csvWrapper        = document.getElementById('csvWrapper');
-    const downloadCsvBtn    = document.getElementById('downloadCsvBtn');
     const supabaseStatus    = document.getElementById('supabaseStatus');
     const postPledgeReveal  = document.getElementById('postPledgeReveal');
     const shareWa           = document.getElementById('shareWa');
@@ -927,11 +866,6 @@
     const shareEmail        = document.getElementById('shareEmail');
     const thankYouModal     = document.getElementById('thankYouModal');
     const thankYouContinueBtn = document.getElementById('thankYouContinueBtn');
-    const adminLocalCount   = document.getElementById('adminLocalCount');
-    const adminPendingCount = document.getElementById('adminPendingCount');
-    const adminLastSync     = document.getElementById('adminLastSync');
-    const adminDuplicateCount = document.getElementById('adminDuplicateCount');
-
     document.getElementById('stickyClose').addEventListener('click', () => stickyBar.classList.add('hidden'));
 
     const CITY_CONFIG = {
@@ -953,7 +887,6 @@
     const polygons = {};
     let currentBoundaryStatus = null;
     let mapsReady = false;
-    let duplicateBlocked = 0;
 
     let pledges = [];
     let pendingSyncQueue = [];
@@ -966,18 +899,6 @@
       if (queue) pendingSyncQueue = JSON.parse(queue);
     } catch (e) {}
 
-    function updateCsvVisibility() {
-      csvWrapper.style.display = pledges.length > 0 ? 'block' : 'none';
-    }
-    updateCsvVisibility();
-
-    function updateAdminPanel(lastSyncText = null) {
-      adminLocalCount.textContent = String(pledges.length);
-      adminPendingCount.textContent = String(pendingSyncQueue.length);
-      adminDuplicateCount.textContent = String(duplicateBlocked);
-      if (lastSyncText) adminLastSync.textContent = lastSyncText;
-    }
-    updateAdminPanel();
     window.addEventListener('online', () => { syncPendingQueue(); });
     setInterval(() => { syncPendingQueue(); }, 30000);
 
@@ -1221,10 +1142,7 @@
     }
 
     async function syncPendingQueue() {
-      if (!pendingSyncQueue.length) {
-        updateAdminPanel(new Date().toLocaleString());
-        return;
-      }
+      if (!pendingSyncQueue.length) return;
       const stillPending = [];
       for (const item of pendingSyncQueue) {
         let supabaseOk = false;
@@ -1241,7 +1159,6 @@
       }
       pendingSyncQueue = stillPending;
       persistLocalData();
-      updateAdminPanel(new Date().toLocaleString());
     }
 
     function validateForm() {
@@ -1280,48 +1197,6 @@
       if (!consentInline.checked) return 'Please check the box to agree to receive campaign updates.';
       return '';
     }
-
-    function pledgesToCsv() {
-      const headers = ['timestamp','campaign_id','full_name','email','address','city_key','city_display','voters_at_address','phone','consent','signature','source','inside_boundary'];
-
-      const rows = pledges.map(p => [
-        p.timestamp,
-        p.campaign_id,
-        p.supporter_full_name,
-        p.email,
-        p.full_address,
-        p.city_key,
-        p.city_display,
-        p.voters_at_address,
-        p.phone,
-        p.consent ? 'yes' : 'no',
-        p.signature,
-        p.source,
-        p.inside_boundary
-      ]);
-
-      return [headers, ...rows]
-        .map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
-        .join('\r\n');
-    }
-
-    downloadCsvBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (!pledges.length) {
-        alert('No pledges yet.');
-        return;
-      }
-
-      const blob = new Blob([pledgesToCsv()], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `pledges-${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    });
 
     function wireShare() {
       const cityName = CITY_CONFIG[citySelect.value].name;
@@ -1402,8 +1277,6 @@
       };
 
       if (isLikelyDuplicate(pledge)) {
-        duplicateBlocked += 1;
-        updateAdminPanel(new Date().toLocaleString());
         formError.textContent = 'This looks like a recent duplicate submission. Please wait or contact campaign staff if this is a mistake.';
         formError.style.display = 'block';
         submitBtn.disabled = false;
@@ -1443,9 +1316,6 @@
         pendingSyncQueue.push({ rawPledge: pledge, dbRecord });
       }
       persistLocalData();
-
-      updateCsvVisibility();
-      updateAdminPanel(new Date().toLocaleString());
 
       submitBtn.disabled = false;
       submitBtn.textContent = '✍️ Sign the Petition & Help Julio Reach 3,500';

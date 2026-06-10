@@ -109,6 +109,12 @@
 
     function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
 
+    // Show a message if we were redirected here from a protected page.
+    (function(){
+      const m = sessionStorage.getItem('admin_login_msg');
+      if (m){ sessionStorage.removeItem('admin_login_msg'); showToast(m, true); }
+    })();
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -139,23 +145,29 @@
       btn.textContent = 'Signing in…';
 
       try {
-        if (supabase) {
-          // Real Supabase auth
-          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) throw error;
-
-          localStorage.setItem('current_user', JSON.stringify({
-            email: data.user.email,
-            id: data.user.id,
-            role: 'Admin'
-          }));
-        } else {
+        if (!supabase) {
           // Supabase not configured — show setup reminder and block login
           showToast('Admin login requires Supabase to be configured. See setup instructions.', true);
           return;
         }
 
-        window.location.href = './team.html';
+        // Real Supabase auth — the session is stored by supabase-js and is the
+        // source of truth. We do NOT trust any role kept in localStorage.
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        // Ask the database whether this user is actually an admin. is_admin()
+        // checks the server-side `admins` table; it cannot be faked client-side.
+        const { data: isAdmin, error: adminErr } = await supabase.rpc('is_admin');
+        if (adminErr) throw adminErr;
+
+        if (!isAdmin) {
+          await supabase.auth.signOut();
+          showToast('This account does not have admin access. Contact a campaign administrator.', true);
+          return;
+        }
+
+        window.location.href = './admin.html';
       } catch (err) {
         console.error('Login error:', err);
         showToast(err.message || 'Invalid email or password.', true);

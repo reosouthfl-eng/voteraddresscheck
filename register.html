@@ -142,7 +142,16 @@
 
   <div id="toast" class="toast"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.0/dist/umd/supabase.min.js"></script>
   <script>
+    // ── Supabase credentials ──
+    const SUPABASE_URL      = 'https://jngtuihzliqvfmfkjapp.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_-FEW-wNxEmcU7_fJGlhm8A_ffYkakgk';
+    let sbClient = null;
+    try {
+      if (window.supabase) sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch (e) { console.warn('Supabase init failed:', e); }
+
     const el = id => document.getElementById(id);
     const toast = el('toast');
 
@@ -202,13 +211,33 @@
       };
       localStorage.setItem('campaign_settings', JSON.stringify(cfg));
       localStorage.setItem('campaign_goal', String(cfg.votes_goal));
-      // Make the registering user the Admin by default (demo)
-      localStorage.setItem('current_user', JSON.stringify({ email: cfg.email, role: 'Admin', name: cfg.full_name }));
 
-      // TODO: send to backend; attach reCAPTCHA/hCaptcha token and client fingerprint if desired.
+      if (!sbClient) {
+        toastMsg('Sign-up is unavailable: Supabase is not configured.');
+        return;
+      }
 
-      toastMsg('Account created.');
-      setTimeout(()=> window.location.href = './team.html', 700);  // go manage your team
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+
+      try {
+        // Create a REAL Supabase account. New accounts are NOT admins — admin
+        // access is granted only by adding the user to the `admins` table in
+        // Supabase. This prevents anyone from self-granting access.
+        const { error } = await sbClient.auth.signUp({
+          email: cfg.email,
+          password: pw.value,
+          options: { data: { full_name: cfg.full_name } }
+        });
+        if (error) throw error;
+
+        toastMsg('Account created. An administrator must grant you access before you can sign in.');
+        setTimeout(()=> window.location.href = './login.html', 1600);
+      } catch (err) {
+        console.error('Sign-up error:', err);
+        toastMsg(err.message || 'Could not create account.');
+        submitBtn.disabled = false;
+      }
     });
   </script>
 </body>
