@@ -833,12 +833,14 @@
   </div>
 
   <script>
-    // Maps API callback + window.load fallback — whichever fires first wins
+    // Maps API callback + window.load fallback — whichever fires first wins.
+    // setTimeout defers initMap to the next event loop tick so all const/let
+    // declarations in this script finish initializing before initMap runs.
     var _mapStarted = false;
     function _startMap() {
       if (_mapStarted) return;
       _mapStarted = true;
-      initMap();
+      setTimeout(function() { initMap(); }, 0);
     }
     window.initMap = _startMap;
 
@@ -1458,8 +1460,8 @@
         hideMapError();
 
         map = new google.maps.Map(document.getElementById('map-container'), {
-          center: { lat: 25.4687, lng: -80.4776 },
-          zoom: 13,
+          center: { lat: 25.4734, lng: -80.4736 },
+          zoom: 12,
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
