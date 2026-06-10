@@ -676,7 +676,7 @@
   </style>
 
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.0/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 
@@ -834,13 +834,16 @@
 
   <script>
     // Maps API callback + window.load fallback — whichever fires first wins.
-    // setTimeout defers initMap to the next event loop tick so all const/let
-    // declarations in this script finish initializing before initMap runs.
+    // setTimeout defers bootApp to the next event loop tick so all const/let
+    // declarations in this script finish initializing before it runs.
+    // The real init function must NOT be named initMap: `window.initMap = _startMap`
+    // overwrites a global function of that name, making setTimeout(initMap)
+    // call _startMap recursively and the map never initializes.
     var _mapStarted = false;
     function _startMap() {
       if (_mapStarted) return;
       _mapStarted = true;
-      setTimeout(function() { initMap(); }, 0);
+      setTimeout(function() { bootApp(); }, 0);
     }
     window.initMap = _startMap;
 
@@ -857,10 +860,13 @@
     const PENDING_SYNC_KEY  = 'pendingPledgeSync';
     const DUPLICATE_WINDOW_MS = 1000 * 60 * 10;
 
-    let supabase = null;
+    // Named sbClient, not "supabase": the supabase-js CDN bundle declares a
+    // top-level `var supabase`, and a `let` of the same name is a SyntaxError
+    // that prevents this entire script from running.
+    let sbClient = null;
     try {
       if (window.supabase && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       }
     } catch (e) {
       console.warn('Supabase client init failed:', e);
@@ -869,9 +875,9 @@
     async function loadProgress() {
       let dbCount = 0;
 
-      if (supabase) {
+      if (sbClient) {
         try {
-          const { count, error } = await supabase.from(TABLE_NAME).select('*', { count: 'exact', head: true });
+          const { count, error } = await sbClient.from(TABLE_NAME).select('*', { count: 'exact', head: true });
           if (!error) dbCount = count || 0;
         } catch (e) {
           console.warn('Progress load failed:', e);
@@ -889,8 +895,8 @@
     loadProgress();
 
     // Live counter — updates instantly when anyone signs
-    if (supabase) {
-      supabase
+    if (sbClient) {
+      sbClient
         .channel('pledges-count')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: TABLE_NAME }, () => {
           loadProgress();
@@ -1222,9 +1228,9 @@
       const stillPending = [];
       for (const item of pendingSyncQueue) {
         let supabaseOk = false;
-        if (supabase) {
+        if (sbClient) {
           try {
-            const { error } = await supabase.from(TABLE_NAME).insert([item.dbRecord]);
+            const { error } = await sbClient.from(TABLE_NAME).insert([item.dbRecord]);
             supabaseOk = !error;
           } catch (err) {
             supabaseOk = false;
@@ -1422,9 +1428,9 @@
       };
 
       let supabaseOk = false;
-      if (supabase) {
+      if (sbClient) {
         try {
-          const { error } = await supabase.from(TABLE_NAME).insert([dbRecord]);
+          const { error } = await sbClient.from(TABLE_NAME).insert([dbRecord]);
           supabaseOk = !error;
         } catch (err) {
           supabaseOk = false;
@@ -1455,7 +1461,7 @@
       openThankYouModal();
     });
 
-    async function initMap() {
+    async function bootApp() {
       try {
         hideMapError();
 
@@ -1470,10 +1476,10 @@
 
         geocoder = new google.maps.Geocoder();
 
-        // PlaceAutocompleteElement (new API — replaces deprecated Autocomplete)
+        // PlaceAutocompleteElement (new API — replaces deprecated Autocomplete).
+        // GA options only: componentRestrictions/types are silently ignored here.
         const paEl = new google.maps.places.PlaceAutocompleteElement({
-          componentRestrictions: { country: 'us' },
-          types: ['address'],
+          includedRegionCodes: ['us'],
         });
         // Match existing input styling
         paEl.style.cssText = 'width:100%;display:block;';
@@ -1482,9 +1488,12 @@
         addressInput.style.display = 'none';
         addressInput.parentNode.insertBefore(paEl, addressInput);
 
-        // When user selects a suggestion
-        paEl.addEventListener('gmp-placeselect', async ({ place }) => {
+        // When user selects a suggestion. GA event is gmp-select with a
+        // placePrediction; the preview-era gmp-placeselect never fires on
+        // current API versions.
+        paEl.addEventListener('gmp-select', async (event) => {
           try {
+            const place = event.placePrediction.toPlace();
             await place.fetchFields({ fields: ['formattedAddress', 'location'] });
             addressInput.value = place.formattedAddress || '';
             if (place.location) {
@@ -1530,7 +1539,7 @@
     });
   </script>
 
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHKqFA29mhzBtl0MqPh-xHTuYNgEnvu0U&libraries=places&callback=initMap"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHKqFA29mhzBtl0MqPh-xHTuYNgEnvu0U&libraries=places&callback=initMap&loading=async" async defer></script>
 </body>
 </html>
 
