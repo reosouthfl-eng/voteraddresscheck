@@ -1156,6 +1156,8 @@
       formError.style.display = 'none';
       formError.textContent = '';
       [nameInput, emailInput, voterCountInput, phoneNumberInput, addressInput, signatureInput].forEach(el => el?.classList.remove('error'));
+      const paInput = addressInput?.previousElementSibling;
+      if (paInput) paInput.style.outline = '';
     }
 
     function validateEmail(v) {
@@ -1237,7 +1239,9 @@
     function validateForm() {
       if (!mapsReady) return 'The map is still loading. Please wait a moment and try again.';
       if (!addressInput.value.trim() || resultEl.style.display === 'none') {
-        addressInput.classList.add('error');
+        // paEl is the visible PlaceAutocompleteElement; addressInput is hidden
+        const paInput = addressInput.previousElementSibling;
+        if (paInput) paInput.style.outline = '2px solid var(--red)';
         return 'Please check your home address on the map first.';
       }
       if (!nameInput.value.trim()) {
@@ -1464,42 +1468,40 @@
 
         geocoder = new google.maps.Geocoder();
 
-        autocomplete = new google.maps.places.Autocomplete(addressInput, {
-          types: ['address'],
+        // PlaceAutocompleteElement (new API — replaces deprecated Autocomplete)
+        const paEl = new google.maps.places.PlaceAutocompleteElement({
           componentRestrictions: { country: 'us' },
-          fields: ['formatted_address', 'geometry', 'name']
+          types: ['address'],
         });
+        // Match existing input styling
+        paEl.style.cssText = 'width:100%;display:block;';
 
-        autocomplete.addListener('place_changed', async () => {
-          const place = autocomplete.getPlace();
-          if (place && place.geometry && place.geometry.location) {
-            await displayResults(place.geometry.location);
-          } else {
-            resultEl.style.display = 'block';
-            resultEl.classList.add('outside');
-            resultEl.textContent = 'No details available for that address.';
+        // Insert above the hidden original input (kept for form value storage)
+        addressInput.style.display = 'none';
+        addressInput.parentNode.insertBefore(paEl, addressInput);
+
+        // When user selects a suggestion
+        paEl.addEventListener('gmp-placeselect', async ({ place }) => {
+          try {
+            await place.fetchFields({ fields: ['formattedAddress', 'location'] });
+            addressInput.value = place.formattedAddress || '';
+            if (place.location) {
+              await displayResults(place.location);
+            } else {
+              resultEl.style.display = 'block';
+              resultEl.classList.add('outside');
+              resultEl.textContent = 'No details available for that address.';
+            }
+          } catch (err) {
+            console.error('Place select error:', err);
           }
         });
 
-        addressInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' && addressInput.value.trim()) {
-            e.preventDefault();
-            geocoder.geocode(
-              {
-                address: addressInput.value.trim(),
-                componentRestrictions: { country: 'US' }
-              },
-              async (results, status) => {
-                if (status === 'OK' && results[0]) {
-                  await displayResults(results[0].geometry.location);
-                } else {
-                  resultEl.style.display = 'block';
-                  resultEl.classList.add('outside');
-                  resultEl.textContent = 'Could not geocode that address. Please select from the suggestions.';
-                }
-              }
-            );
-          }
+        // Clear result when user edits the field again
+        paEl.addEventListener('input', () => {
+          addressInput.value = '';
+          resultEl.style.display = 'none';
+          currentBoundaryStatus = null;
         });
 
         citySelect.addEventListener('change', async () => {
