@@ -796,7 +796,7 @@
     // Get these from: https://supabase.com → your project → Settings → API
     const SUPABASE_URL      = 'https://jngtuihzliqvfmfkjapp.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_-FEW-wNxEmcU7_fJGlhm8A_ffYkakgk';
-    // ───────────────────────────────────────────────────────────────────────────
+    // ───────────────────────────────────────────────────────────────────────────────
     const TABLE_NAME        = 'pledges';
     const MANUAL_FLOOR      = 142;
     const GOAL              = 3500;
@@ -804,6 +804,10 @@
     const LOCAL_PLEDGES_KEY = 'pledges';
     const PENDING_SYNC_KEY  = 'pendingPledgeSync';
     const DUPLICATE_WINDOW_MS = 1000 * 60 * 10;
+    // Referral + source tracking from URL (?ref=CODE&src=CHANNEL)
+    const URL_PARAMS = new URLSearchParams(location.search);
+    const REF_CODE = URL_PARAMS.get('ref') || null;
+    const SRC_TAG = URL_PARAMS.get('src') || null;
 
     // Named sbClient, not "supabase": the supabase-js CDN bundle declares a
     // top-level `var supabase`, and a `let` of the same name is a SyntaxError
@@ -887,6 +891,7 @@
     const polygons = {};
     let currentBoundaryStatus = null;
     let mapsReady = false;
+    let lastLat = null, lastLng = null;
 
     let pledges = [];
     let pendingSyncQueue = [];
@@ -1055,6 +1060,9 @@
     async function displayResults(latLng) {
       if (!boundaryGeoJSON) return;
 
+      lastLat = typeof latLng.lat === 'function' ? latLng.lat() : latLng.lat;
+      lastLng = typeof latLng.lng === 'function' ? latLng.lng() : latLng.lng;
+
       const selected = citySelect.value;
       const other = selected === 'homestead' ? 'floridacity' : 'homestead';
       const inSelected = pointInPolygon(latLng, cityCache[selected]);
@@ -1201,7 +1209,10 @@
     function wireShare() {
       const cityName = CITY_CONFIG[citySelect.value].name;
       const msg = `I just signed the petition to get Julio Guzman on the mayoral ballot in ${cityName}. Sign here:`;
-      const url = location.href.split('#')[0];
+      const nameSlug = (nameInput.value || '').toLowerCase().replace(/[^a-z]/g, '').slice(0, 10);
+      const phone4 = normalizePhone(phoneNumberInput.value).slice(-4);
+      const myCode = (nameSlug + phone4) || 'friend';
+      const url = location.origin + location.pathname + '?ref=' + encodeURIComponent(myCode);
 
       shareWa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg + ' ' + url)}`;
       shareSms.href = `sms:?&body=${encodeURIComponent(msg + ' ' + url)}`;
@@ -1272,7 +1283,7 @@
         phone: phoneNumberInput.value.trim(),
         consent: !!consentInline.checked,
         signature: signatureInput.value.trim(),
-        source: 'web:boundary_form_v3',
+        source: 'web:boundary_form_v3' + (SRC_TAG ? ':' + SRC_TAG : ''),
         inside_boundary: currentBoundaryStatus === 'inside'
       };
 
@@ -1297,7 +1308,11 @@
         consent: pledge.consent,
         signature: pledge.signature,
         source: pledge.source,
-        inside_boundary: pledge.inside_boundary
+        inside_boundary: pledge.inside_boundary,
+        lat: lastLat,
+        lng: lastLng,
+        normalized_address: pledge.full_address || null,
+        referrer_code: REF_CODE
       };
 
       let supabaseOk = false;
